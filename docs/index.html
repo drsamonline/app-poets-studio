@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Poet's Studio — rhyme, metre and fixed forms, fully offline</title>
+<meta name="description" content="A poetry workshop that measures what you wrote: rhyme by sound, metre as you type, and fixed forms that check you. 124,085 words bundled. Offline, no accounts.">
+<link rel="canonical" href="https://drsamonline.github.io/app-poets-studio/">
+<meta property="og:title" content="Poet's Studio">
+<meta property="og:description" content="Rhyme, metre and fixed forms — measured, not generated. Fully offline.">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary">
+<style>
+  :root{--bg:#0f1115;--card:#171a21;--ink:#e7e9ee;--mut:#9aa3b2;--line:#252a34;--acc:#22c55e}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font:17px/1.65 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+  .wrap{max-width:760px;margin:0 auto;padding:40px 20px 64px}
+  h1{font-size:34px;margin:0 0 6px;letter-spacing:-.4px}
+  h2{font-size:15px;text-transform:uppercase;letter-spacing:.09em;color:var(--mut);margin:34px 0 10px}
+  .mut{color:var(--mut)}
+  .lede{font-size:19px;margin:10px 0 24px}
+  a.cta{display:inline-block;background:var(--acc);color:#06210f;font-weight:700;
+    text-decoration:none;padding:13px 22px;border-radius:12px;margin:6px 10px 6px 0}
+  a.alt{display:inline-block;border:1px solid var(--line);color:var(--ink);text-decoration:none;
+    padding:13px 22px;border-radius:12px;margin:6px 0}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;margin:14px 0}
+  ul{padding-left:20px;margin:8px 0}
+  li{margin:5px 0}
+  code{background:#0b0d11;border:1px solid var(--line);border-radius:6px;padding:1px 5px;font-size:14px}
+  .poem{font:17px/1.95 Georgia,"Iowan Old Style",serif;color:#cfd6e2;margin:0}
+  .poem span{color:var(--acc)}
+  footer{margin-top:40px;border-top:1px solid var(--line);padding-top:14px;font-size:14px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Poet's Studio</h1>
+  <p class="lede">A workshop, not a generator. It measures the poem you wrote — the metre as
+  you type, the rhyme sound of every ending, and whether the sonnet you are
+  attempting actually is one.</p>
+
+  <a class="cta" href="play/">Open the studio →</a>
+  <a class="alt" href="https://github.com/drsamonline/app-poets-studio">Source</a>
+
+  <div class="card">
+    <p class="poem">The morning light is soft upon the <span>wall</span><br>
+    A single bird begins to call the <span>day</span><br>
+    the shadows lengthen slowly down the <span>hall</span><br>
+    and all the sleeping gardens turn to <span>grey</span></p>
+    <p class="mut" style="font-size:14px;margin:12px 0 0">
+      14 lines · 10 syllables each · iambic · ABAB CDCD EFEF GG — <b style="color:var(--acc)">passes</b></p>
+  </div>
+
+  <h2>What it does</h2>
+  <ul>
+    <li><b>Rhyme finder</b> — perfect, near and slant, found by sound from a
+      pronouncing dictionary. Spelling is never consulted, so <code>though</code>
+      and <code>cough</code> are told apart and <code>say</code> rhymes with
+      <code>away</code>.</li>
+    <li><b>Syllables and metre</b> — a running stress bar per line, and the metre
+      named when the line is regular. When it is not, it is not named.</li>
+    <li><b>Fixed forms as constraints</b> — Shakespearean sonnet, haiku, ghazal,
+      and a custom stanza of your own counts and scheme, each a live pass/fail
+      with the reason and the line number.</li>
+    <li><b>Journal</b> — drafts and versions on the device. Export one poem, the
+      journal as JSON, or every draft as a ZIP.</li>
+  </ul>
+
+  <h2>What it refuses to do</h2>
+  <ul>
+    <li>Write the poem. There is no generator and no prompt box.</li>
+    <li>Guess at a word it does not know — the word is named and the line is
+      marked inexact.</li>
+    <li>Call an irregular line regular.</li>
+  </ul>
+
+  <h2>Offline, and honestly so</h2>
+  <p>124,085 words of the CMU Pronouncing Dictionary ship inside the app, in a
+  single-character encoding — 1.9 MB instead of 3.6 MB. No network, no accounts,
+  no telemetry, no model. Works from a USB stick.</p>
+
+  <footer class="mut">
+    MIT engine, dual-licensed app · © 2026 Dr Sohil Momin ·
+    dictionary © Carnegie Mellon University, BSD-2-Clause ·
+    <a href="https://github.com/drsamonline/app-poets-studio" style="color:var(--mut)">source</a>
+  </footer>
+</div>
+</body>
+</html>

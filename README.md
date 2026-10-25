@@ -1,5 +1,11 @@
 # Poet's Studio
 
+<!-- shot:start -->
+
+![Screenshot](docs/shot.png)
+
+<!-- shot:end -->
+
 [![live](https://img.shields.io/badge/live-online-22c55e)](https://drsamonline.github.io/app-poets-studio/play/)
 [![test](https://github.com/drsamonline/app-poets-studio/actions/workflows/test.yml/badge.svg)](https://github.com/drsamonline/app-poets-studio/actions/workflows/test.yml)
 [![license](https://img.shields.io/badge/license-dual%20(personal%20free)-blue)](LICENSE)

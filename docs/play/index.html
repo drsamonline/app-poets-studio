@@ -1,0 +1,405 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Poet's Studio — rhyme, metre and fixed forms, fully offline</title>
+<meta name="theme-color" content="#0f1115">
+<style>
+  :root{
+    --bg:#0f1115;--card:#171a21;--ink:#e7e9ee;--mut:#9aa3b2;--line:#252a34;--acc:#22c55e;
+    --warn:#eab308;--bad:#ef4444;--good:#22c55e;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--ink)}
+  body{font:16px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+  .wrap{max-width:1180px;margin:0 auto;padding:16px}
+  header{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;border-bottom:1px solid var(--line);padding-bottom:12px;margin-bottom:16px}
+  h1{font-size:20px;margin:0;letter-spacing:.2px}
+  .mut{color:var(--mut)}
+  .small{font-size:13px}
+  .spacer{flex:1}
+  button,select,input,textarea{font:inherit;color:var(--ink);background:var(--card);
+    border:1px solid var(--line);border-radius:10px;padding:8px 10px}
+  button{cursor:pointer}
+  button.primary{background:var(--acc);color:#06210f;border-color:transparent;font-weight:600}
+  button.ghost{background:transparent}
+  button:disabled{opacity:.5;cursor:default}
+  .grid{display:grid;grid-template-columns:1.15fr .85fr;gap:16px}
+  @media (max-width:900px){.grid{grid-template-columns:1fr}}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px}
+  .card h2{font-size:13px;text-transform:uppercase;letter-spacing:.09em;color:var(--mut);margin:0 0 10px}
+  textarea#poem{
+    width:100%;min-height:330px;resize:vertical;border:0;background:transparent;
+    font:17px/1.9 Georgia,"Iowan Old Style",serif;padding:4px 2px;outline:none;
+    white-space:pre-wrap;
+  }
+  .bar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px}
+  .badge{font-size:12px;padding:3px 9px;border-radius:999px;border:1px solid var(--line)}
+  .badge.pass{color:var(--good);border-color:var(--good)}
+  .badge.fail{color:var(--bad);border-color:var(--bad)}
+  .badge.warn{color:var(--warn);border-color:var(--warn)}
+  .measure{margin-top:12px;border-top:1px solid var(--line);padding-top:10px}
+  .row{display:grid;grid-template-columns:26px 34px 1fr;gap:8px;align-items:center;
+    padding:3px 0;font-size:13px;border-radius:6px}
+  .row.bad{background:rgba(239,68,68,.09)}
+  .row .n{color:var(--mut);text-align:right;font-variant-numeric:tabular-nums}
+  .row .syl{color:var(--mut);text-align:right;font-variant-numeric:tabular-nums}
+  .pat{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:2px;font-size:13px}
+  .pat i{font-style:normal;color:var(--mut);opacity:.45}
+  .pat b{font-weight:400;color:var(--acc)}
+  .metre{color:var(--mut);margin-left:8px}
+  .issues{list-style:none;padding:0;margin:10px 0 0;font-size:13px}
+  .issues li{padding:4px 0;border-top:1px dashed var(--line)}
+  .issues li.fail{color:#fca5a5}
+  .issues li.warn{color:#fde68a}
+  .tabs{display:flex;gap:6px;margin-bottom:10px}
+  .tabs button{flex:1;background:transparent;border-color:var(--line)}
+  .tabs button[aria-selected="true"]{background:var(--bg);border-color:var(--acc);color:var(--acc)}
+  .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;max-height:330px;overflow:auto}
+  .chip{font-size:13px;padding:3px 8px;border:1px solid var(--line);border-radius:999px;
+    background:var(--bg);cursor:pointer}
+  .chip:hover{border-color:var(--acc);color:var(--acc)}
+  .chip .s{color:var(--mut);font-size:11px;margin-left:4px}
+  .field{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  .field label{font-size:12px;color:var(--mut)}
+  .drafts{list-style:none;padding:0;margin:0;font-size:14px}
+  .drafts li{display:flex;gap:8px;align-items:center;padding:7px 0;border-top:1px solid var(--line)}
+  .drafts li:first-child{border-top:0}
+  .drafts .t{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .drafts .m{color:var(--mut);font-size:12px}
+  footer{margin-top:18px;border-top:1px solid var(--line);padding-top:10px}
+  .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+  .form-note{font-size:12px;color:var(--mut);margin:0 0 8px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Poet's Studio</h1>
+    <span class="mut small">rhyme · metre · fixed forms — offline, no accounts</span>
+    <span class="spacer"></span>
+    <select id="form" aria-label="Form"></select>
+    <button id="theme" class="ghost" title="Switch light and dark">Theme</button>
+  </header>
+
+  <div class="grid">
+    <section class="card">
+      <div class="bar">
+        <span class="badge" id="verdict">—</span>
+        <span class="mut small" id="formnote"></span>
+        <span class="spacer"></span>
+        <button id="save" class="primary">Save draft</button>
+      </div>
+      <label class="sr" for="poem">Your poem</label>
+      <textarea id="poem" spellcheck="false" placeholder="Write here. The metre is measured as you go — nothing is written for you."></textarea>
+      <div class="measure" id="measure" aria-live="polite"></div>
+      <ul class="issues" id="issues"></ul>
+    </section>
+
+    <section class="card">
+      <div class="tabs" role="tablist">
+        <button role="tab" id="tab-rhyme" aria-selected="true" aria-controls="pane-rhyme">Rhyme finder</button>
+        <button role="tab" id="tab-journal" aria-selected="false" aria-controls="pane-journal">Journal</button>
+      </div>
+
+      <div id="pane-rhyme">
+        <div class="field">
+          <label class="sr" for="word">Word</label>
+          <input id="word" placeholder="a word to rhyme" style="flex:1;min-width:120px">
+          <label for="syl">syllables</label>
+          <input id="syl" type="number" min="1" max="8" placeholder="any" style="width:74px">
+        </div>
+        <p class="form-note" id="rhyme-note">Type a word. Rhymes come from the bundled pronouncing dictionary, by sound — not by spelling.</p>
+        <div id="rhyme-out"></div>
+      </div>
+
+      <div id="pane-journal" hidden>
+        <div class="field">
+          <input id="title" placeholder="draft title" style="flex:1;min-width:120px">
+          <button id="savenew" class="primary">Save</button>
+        </div>
+        <ul class="drafts" id="drafts"></ul>
+        <div class="field" style="margin-top:10px">
+          <button id="export-all" class="ghost">Export journal (JSON)</button>
+          <button id="export-zip" class="ghost">Download all drafts (ZIP)</button>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <footer class="mut small">
+    <span id="dictinfo">loading dictionary…</span> ·
+    everything stays on this device · MIT © 2026 Dr Sohil Momin
+  </footer>
+</div>
+
+<script src="web-kit.js"></script>
+<script src="search-kit.js"></script>
+<script src="export-kit.js"></script>
+<script src="poetry.js"></script>
+<script src="dict.js"></script>
+<script>
+(function () {
+  "use strict";
+  var $ = function (id) { return document.getElementById(id); };
+  var DICT = Poetry.parseDict(CMUDICT_SUBSET);
+  $("dictinfo").textContent = DICT.size.toLocaleString() + " words in the pronouncing dictionary";
+
+  if (window.Loom) { Loom.theme.apply(); Loom.seo.title("Poet's Studio"); }
+
+  /* ---------------- form picker ---------------- */
+  var formSel = $("form");
+  ["free", "haiku", "sonnet", "ghazal", "custom"].forEach(function (id) {
+    var o = document.createElement("option");
+    o.value = id; o.textContent = Poetry.FORMS[id].name;
+    formSel.appendChild(o);
+  });
+  var custom = { syllables: [], scheme: "" };
+  var saved = Loom ? Loom.storage.get("form", "sonnet") : "sonnet";
+  formSel.value = saved || "sonnet";
+
+  /* ---------------- the measure ---------------- */
+  var poem = $("poem");
+  var lastCheck = null;
+
+  function renderPattern(pat, ideal) {
+    var out = "";
+    for (var i = 0; i < pat.length; i++) {
+      var ch = pat.charAt(i);
+      if (ch === "1") out += "<b>—</b>";
+      else out += "<i>·</i>";
+    }
+    return out;
+  }
+
+  function measure() {
+    var text = poem.value;
+    var formId = formSel.value;
+    var opts = formId === "custom" ? custom : {};
+    var r = Poetry.check(formId, text, DICT, opts);
+    lastCheck = r;
+
+    $("formnote").textContent = r.form.note || "";
+
+    var rows = "";
+    r.lines.forEach(function (l) {
+      var bad = r.issues.some(function (i) { return i.line === l.n && i.level === "fail"; });
+      rows += '<div class="row' + (bad ? " bad" : "") + '">' +
+        '<span class="n">' + l.n + '</span>' +
+        '<span class="syl">' + l.syllables + '</span>' +
+        '<span><span class="pat">' + renderPattern(l.pattern) + '</span>' +
+        '<span class="metre">' + (l.metre ? l.metre.name : "") +
+        (l.unknown.length ? ' · ?' + l.unknown.join(", ") : "") + '</span></span>' +
+        '</div>';
+    });
+    $("measure").innerHTML = rows || '<span class="mut small">No lines yet.</span>';
+
+    var v = $("verdict");
+    if (!r.lines.length) { v.className = "badge"; v.textContent = "—"; }
+    else if (r.pass) { v.className = "badge pass"; v.textContent = "Passes " + r.form.name; }
+    else { v.className = "badge fail"; v.textContent = r.failed + " issue" + (r.failed === 1 ? "" : "s"); }
+
+    var iss = r.issues.slice(0, 40).map(function (i) {
+      return '<li class="' + i.level + '">' + (i.line ? "line " + i.line + " · " : "") + i.msg + '</li>';
+    }).join("");
+    $("issues").innerHTML = iss;
+  }
+
+  var t = null;
+  poem.addEventListener("input", function () {
+    if (t) clearTimeout(t);
+    t = setTimeout(measure, 120);
+  });
+  formSel.addEventListener("change", function () {
+    if (Loom) Loom.storage.set("form", formSel.value);
+    if (formSel.value === "custom") askCustom();
+    measure();
+  });
+
+  function askCustom() {
+    var syl = prompt("Syllable count for each line, comma separated (e.g. 8,6,8,6):",
+      custom.syllables.join(",") || "8,6,8,6");
+    if (syl !== null) {
+      custom.syllables = String(syl).split(",").map(function (s) {
+        var n = parseInt(s.trim(), 10); return isNaN(n) ? 0 : n;
+      });
+    }
+    var sch = prompt("Rhyme scheme letters (e.g. ABAB, or leave blank):", custom.scheme || "ABAB");
+    if (sch !== null) custom.scheme = String(sch).toUpperCase();
+    measure();
+  }
+
+  /* ---------------- rhyme finder ---------------- */
+  var wordEl = $("word"), sylEl = $("syl"), rhymeOut = $("rhyme-out");
+  var rt = null;
+
+  function rhymeGroup(name, list) {
+    if (!list.length) return "";
+    var chips = list.slice(0, 120).map(function (r) {
+      return '<span class="chip" data-w="' + r.word + '">' + r.word +
+        '<span class="s">' + r.syllables + '</span></span>';
+    }).join("");
+    return '<div class="small mut" style="margin:10px 0 2px">' + name +
+      ' <span class="mut">(' + list.length + ')</span></div>' +
+      '<div class="chips">' + chips + '</div>';
+  }
+
+  function findRhymes() {
+    var w = wordEl.value.trim();
+    if (!w) { rhymeOut.innerHTML = ""; return; }
+    var n = parseInt(sylEl.value, 10);
+    var r = Poetry.rhymes(w, DICT, isNaN(n) ? {} : { syllables: n });
+    if (!r.known) {
+      $("rhyme-note").textContent = "\u201c" + w + "\u201d is not in the dictionary, so it cannot be sounded.";
+      rhymeOut.innerHTML = ""; return;
+    }
+    var nSyl = Poetry.syllables(Poetry.lookup(w, DICT));
+    $("rhyme-note").textContent = "\u201c" + w + "\u201d — " + nSyl +
+      (nSyl === 1 ? " syllable · " : " syllables · ") +
+      Poetry.lookup(w, DICT).join(" ");
+    rhymeOut.innerHTML =
+      rhymeGroup("Perfect", r.perfect) +
+      rhymeGroup("Near", r.near) +
+      rhymeGroup("Slant", r.slant) ||
+      '<p class="form-note">Nothing found. Try clearing the syllable filter.</p>';
+  }
+
+  wordEl.addEventListener("input", function () {
+    if (rt) clearTimeout(rt);
+    rt = setTimeout(findRhymes, 160);
+  });
+  sylEl.addEventListener("input", function () { if (rt) clearTimeout(rt); rt = setTimeout(findRhymes, 160); });
+
+  rhymeOut.addEventListener("click", function (e) {
+    var chip = e.target.closest(".chip");
+    if (chip) { wordEl.value = chip.getAttribute("data-w"); findRhymes(); }
+  });
+
+  /* ---------------- journal ---------------- */
+  var drafts = (Loom && Loom.storage.get("drafts", [])) || [];
+
+  function persist() { if (Loom) Loom.storage.set("drafts", drafts); }
+
+  function renderDrafts() {
+    var ul = $("drafts");
+    if (!drafts.length) { ul.innerHTML = '<li class="mut small">No drafts yet.</li>'; return; }
+    ul.innerHTML = drafts.map(function (d) {
+      return '<li data-id="' + d.id + '">' +
+        '<span class="t">' + esc(d.title) + ' <span class="m">' + d.versions.length +
+        ' version' + (d.versions.length === 1 ? "" : "s") + ' · ' + esc(d.form) + '</span></span>' +
+        '<button class="ghost" data-act="load">Open</button>' +
+        '<button class="ghost" data-act="drop" title="Delete">×</button>' +
+        '</li>';
+    }).join("");
+  }
+
+  function esc(s) {
+    return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
+      return ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c];
+    });
+  }
+
+  function saveDraft() {
+    var title = $("title").value.trim() || firstLine(poem.value) || "Untitled";
+    var text = poem.value;
+    if (!text.trim()) return;
+    // one draft per title: saving again adds a VERSION, so the history is kept
+    var found = null;
+    for (var i = 0; i < drafts.length; i++) if (drafts[i].title === title) found = drafts[i];
+    if (found) {
+      if (found.versions[found.versions.length - 1].text !== text) {
+        found.versions.push({ at: new Date().toISOString(), text: text, form: formSel.value });
+      }
+      found.form = formSel.value;
+    } else {
+      drafts.unshift({
+        id: "d" + Date.now(), title: title, form: formSel.value,
+        versions: [{ at: new Date().toISOString(), text: text, form: formSel.value }]
+      });
+    }
+    persist(); renderDrafts();
+    if (Loom && Loom.a11y) Loom.a11y.announce("Saved \u201c" + title + "\u201d");
+  }
+
+  function firstLine(text) {
+    var l = String(text).split("\n").filter(function (x) { return x.trim(); });
+    return l.length ? l[0].trim().slice(0, 60) : "";
+  }
+
+  $("savenew").addEventListener("click", saveDraft);
+  $("save").addEventListener("click", saveDraft);
+
+  $("drafts").addEventListener("click", function (e) {
+    var btn = e.target.closest("button");
+    if (!btn) return;
+    var li = e.target.closest("li"), id = li && li.getAttribute("data-id");
+    var d = null;
+    for (var i = 0; i < drafts.length; i++) if (drafts[i].id === id) d = drafts[i];
+    if (!d) return;
+    if (btn.getAttribute("data-act") === "load") {
+      var v = d.versions[d.versions.length - 1];
+      poem.value = v.text;
+      $("title").value = d.title;
+      if (d.form && Poetry.FORMS[d.form]) formSel.value = d.form;
+      measure();
+      showTab("rhyme");
+    } else {
+      if (!confirm("Delete \u201c" + d.title + "\u201d and its " + d.versions.length + " version(s)?")) return;
+      drafts = drafts.filter(function (x) { return x.id !== id; });
+      persist(); renderDrafts();
+    }
+  });
+
+  $("export-all").addEventListener("click", function () {
+    if (!window.Export) return;
+    Export.json("poets-studio-journal.json", { app: "Poet's Studio", exported: new Date().toISOString(), drafts: drafts });
+  });
+
+  $("export-zip").addEventListener("click", function () {
+    if (!window.Export) return;
+    var files = drafts.map(function (d) {
+      var body = d.versions.map(function (v) {
+        return "--- " + v.at + " (" + v.form + ") ---\n" + v.text;
+      }).join("\n\n");
+      return { name: safeName(d.title) + ".txt", data: body };
+    });
+    if (!files.length) { alert("Nothing to export yet."); return; }
+    Export.saveZip("poets-studio-drafts.zip", files);
+  });
+
+  function safeName(s) {
+    return String(s).replace(/[^A-Za-z0-9 _-]/g, "").trim().replace(/\s+/g, "-").slice(0, 60) || "draft";
+  }
+
+  /* ---------------- tabs ---------------- */
+  function showTab(which) {
+    $("tab-rhyme").setAttribute("aria-selected", which === "rhyme" ? "true" : "false");
+    $("tab-journal").setAttribute("aria-selected", which === "journal" ? "true" : "false");
+    $("pane-rhyme").hidden = which !== "rhyme";
+    $("pane-journal").hidden = which !== "journal";
+    if (which === "journal") renderDrafts();
+  }
+  $("tab-rhyme").addEventListener("click", function () { showTab("rhyme"); });
+  $("tab-journal").addEventListener("click", function () { showTab("journal"); });
+
+  $("theme").addEventListener("click", function () {
+    if (window.Loom) Loom.theme.toggle();
+  });
+
+  /* ---------------- start ---------------- */
+  var starter = Loom ? Loom.storage.get("last", "") : "";
+  poem.value = starter || "";
+  renderDrafts();
+  measure();
+
+  // remember the last thing typed, so a refresh is not a loss
+  poem.addEventListener("input", function () {
+    if (Loom) Loom.storage.set("last", poem.value);
+  });
+
+  window.PoetsStudio = { dict: DICT, measure: measure, rhymes: findRhymes, drafts: function () { return drafts; } };
+})();
+</script>
+</body>
+</html>

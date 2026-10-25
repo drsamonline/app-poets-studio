@@ -1,0 +1,39 @@
+# Build + release + deploy. One push, one pipeline, all from the same commit.
+#
+# SPDX-FileCopyrightText: 2026 Dr Sohil Momin
+# SPDX-License-Identifier: LicenseRef-Forge-Proprietary
+#
+# This file is intentionally tiny: the whole pipeline lives in the public
+# app-builder kit, so a fix there reaches every app at once. Do not inline it.
+#
+# Pull requests build (and are therefore checked) but never release or deploy.
+
+name: Build + deploy
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: build
+  cancel-in-progress: true
+
+jobs:
+  app:
+    uses: drsamonline/app-builder/.github/workflows/build.yml@main
+    with:
+      app_name: app-poets-studio
+      app_src: docs/play
+      deploy_path: docs
+    permissions:
+      contents: write
+      pages: write
+      id-token: write

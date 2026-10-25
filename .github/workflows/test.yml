@@ -1,0 +1,31 @@
+# The proof. docs/play/poetry.js is what the app runs, so this tests the app.
+name: Test
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: The engine, the dictionary and the forms
+        run: node test-node.js
+      - name: The app ships what it says it ships
+        run: |
+          set -euo pipefail
+          for f in index.html poetry.js dict.js web-kit.js search-kit.js export-kit.js; do
+            test -s "docs/play/$f" || { echo "::error::docs/play/$f is missing or empty"; exit 1; }
+          done
+          node --check docs/play/poetry.js
+          echo "docs/play is complete" >> "$GITHUB_STEP_SUMMARY"

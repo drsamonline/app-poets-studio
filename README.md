@@ -8,7 +8,7 @@
 
 [![live](https://img.shields.io/badge/live-online-22c55e)](https://drsamonline.github.io/app-poets-studio/play/)
 [![test](https://github.com/drsamonline/app-poets-studio/actions/workflows/test.yml/badge.svg)](https://github.com/drsamonline/app-poets-studio/actions/workflows/test.yml)
-[![license](https://img.shields.io/badge/license-dual%20(personal%20free)-blue)](LICENSE)
+[![license](https://img.shields.io/badge/license-PolyForm%20Noncommercial%201.0.0-informational)](LICENSE)
 [![download](https://img.shields.io/github/v/release/drsamonline/app-poets-studio
 
 **Rhyme, metre and fixed forms — offline, no accounts, no telemetry.**
@@ -94,5 +94,9 @@ perfection no real sonnet has.
 
 ## Licence
 
-Dual — free for personal and non-commercial use, paid for commercial use. See
-[LICENSE](LICENSE). The bundled dictionary keeps its own BSD-2-Clause licence.
+PolyForm Noncommercial 1.0.0 — free for any noncommercial purpose. Commercial use
+needs a licence from the author. See [`LICENSE`](LICENSE).
+
+The bundled dictionary keeps its own **BSD-2-Clause** licence, and that licence
+travels with it.
+

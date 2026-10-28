@@ -24,7 +24,7 @@ jobs:
       - name: The app ships what it says it ships
         run: |
           set -euo pipefail
-          for f in index.html poetry.js dict.js web-kit.js search-kit.js export-kit.js; do
+          for f in index.html poetry.js dict.js web-kit.js export-kit.js; do
             test -s "docs/play/$f" || { echo "::error::docs/play/$f is missing or empty"; exit 1; }
           done
           node --check docs/play/poetry.js

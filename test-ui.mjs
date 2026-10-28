@@ -56,7 +56,7 @@ const d = w.document;
 
 let bootError = null;
 try {
-  for (const f of ["web-kit.js", "search-kit.js", "export-kit.js", "poetry.js", "dict.js"]) {
+  for (const f of ["web-kit.js", "export-kit.js", "poetry.js", "dict.js"]) {
     const s = d.createElement("script");
     s.textContent = fs.readFileSync(path.join(dir, f), "utf8");
     d.head.appendChild(s);

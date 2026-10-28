@@ -235,11 +235,11 @@ eq("the sonnet's scheme is read back as ABABCDCDEFEFGG", sc.letters.join(""), "A
 section("the app ships what it says it ships");
 
 var dir = path.join(__dirname, "docs", "play");
-["index.html", "poetry.js", "dict.js", "web-kit.js", "search-kit.js", "export-kit.js"].forEach(function (f) {
+["index.html", "poetry.js", "dict.js", "web-kit.js", "export-kit.js"].forEach(function (f) {
   ok("docs/play/" + f + " exists", fs.existsSync(path.join(dir, f)));
 });
 var html = fs.readFileSync(path.join(dir, "index.html"), "utf8");
-["poetry.js", "dict.js", "web-kit.js", "search-kit.js", "export-kit.js"].forEach(function (f) {
+["poetry.js", "dict.js", "web-kit.js", "export-kit.js"].forEach(function (f) {
   ok("the app loads " + f, html.indexOf('src="' + f + '"') >= 0);
 });
 ok("the app makes no network request", !/https?:\/\//.test(html.replace(/https?:\/\/[^"'\s]*w3\.org[^"'\s]*/g, "")));

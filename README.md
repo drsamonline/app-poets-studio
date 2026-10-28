@@ -83,7 +83,6 @@ node test-node.js      # 76 assertions, no dependencies
 | `docs/play/poetry.js` | the engine: syllables, stress, rhyme, metre, forms. Works in the browser and in Node, so the tests test the app |
 | `docs/play/dict.js` | the bundled dictionary |
 | `docs/play/web-kit.js` | shell, storage, theme, i18n, CSV |
-| `docs/play/search-kit.js` | ranked search |
 | `docs/play/export-kit.js` | files and ZIP off the device |
 
 The form checks are deliberately honest about the difference between a

@@ -8,7 +8,7 @@
 
 [![live](https://img.shields.io/badge/live-online-22c55e)](https://drsamonline.github.io/app-poets-studio/play/)
 [![test](https://github.com/drsamonline/app-poets-studio/actions/workflows/test.yml/badge.svg)](https://github.com/drsamonline/app-poets-studio/actions/workflows/test.yml)
-[![license](https://img.shields.io/badge/license-PolyForm%20Noncommercial%201.0.0-informational)](LICENSE)
+[![License: PolyForm Noncommercial 1.0.0](https://img.shields.io/badge/license-PolyForm%20Noncommercial%201.0.0-informational)](LICENSE)
 [![download](https://img.shields.io/github/v/release/drsamonline/app-poets-studio
 
 **Rhyme, metre and fixed forms — offline, no accounts, no telemetry.**

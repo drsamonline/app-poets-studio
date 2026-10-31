@@ -400,5 +400,21 @@
   window.PoetsStudio = { dict: DICT, measure: measure, rhymes: findRhymes, drafts: function () { return drafts; } };
 })();
 </script>
+<style id="app-theme">
+  /* app-poets-studio - its own palette, type and shape.
+     Keyed on data-theme so the in-app theme toggle still works; !important is
+     required because web-kit sets these as inline styles on <html>. */
+  html[data-theme="dark"]{--bg:#14080e !important;--card:#240913 !important;--ink:#fdeff2 !important;--mut:#b25e7b !important;--line:#3a0c19 !important;--acc:#e95c7b !important;}
+  html[data-theme="light"]{--bg:#fef5f7 !important;--card:#ffffff !important;--ink:#25111c !important;--mut:#b23657 !important;--line:#fbdfe5 !important;--acc:#b8183b !important;}
+  html,body{font-family:ui-serif, Georgia, "Iowan Old Style", "Times New Roman", serif !important;letter-spacing:0 !important;
+    background-image:radial-gradient(820px 360px at 50% -170px,
+      color-mix(in srgb, var(--acc) 16%, transparent), transparent 72%) !important;
+    background-repeat:no-repeat !important;background-attachment:fixed !important}
+  button,input,textarea,select{font-family:ui-serif, Georgia, "Iowan Old Style", "Times New Roman", serif !important}
+  button,.btn{border-radius:10px !important}
+  input,textarea,select{border-radius:8px !important}
+  .card,[class*="card"]{border-radius:12px !important}
+  button:not(.ghost):not(.tab){background:var(--acc) !important}
+</style>
 </body>
 </html>

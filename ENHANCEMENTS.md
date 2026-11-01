@@ -127,7 +127,7 @@ written.
   has nothing left to measure.
 - **Cloud sync or accounts.** Every case in this estate is device-local; a login would
   be the only thing in the app that needs the network.
-- **Webfonts, icon fonts, CDN scripts.** The dictionary already costs 2.2 MB; a font is
+- **Webfonts, icon fonts, CDN scripts.** The dictionary already costs 2.1 MB; a font is
   the wrong 200 KB, and a CDN is a page that breaks on a train.
 - **Analytics.** Nothing here needs to know who is writing.
 - **A native rewrite.** The single HTML file is the distribution strategy: it runs from

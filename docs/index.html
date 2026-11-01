@@ -345,7 +345,7 @@
         character, so the app can rhyme and scan with the network switched off.</p>
       <div class="figs">
         <div class="fig"><b>133,971</b><span>pronunciations of 124,926 words</span></div>
-        <div class="fig"><b>2.2 MB</b><span>of text, inside the app</span></div>
+        <div class="fig"><b>2.1 MB</b><span>of text, inside the app</span></div>
         <div class="fig"><b>136</b><span>assertions, no test framework</span></div>
         <div class="fig"><b>0</b><span>runtime dependencies</span></div>
       </div>
@@ -384,9 +384,11 @@
         <div>
           <p><b>The dictionary.</b> <code>docs/play/dict.js</code> is a derived work of the
             <b>CMU Pronouncing Dictionary</b> (cmusphinx/cmudict), BSD-2-Clause, redistributed here as
-            source. Entries that are not plain lowercase English words were dropped, one pronunciation
-            per word was kept, and each phoneme re-encoded as a single character. No entry's
-            pronunciation was altered. Its licence travels with it in
+            source. Entries that are not plain lowercase English words were dropped, duplicate
+            pronunciations were collapsed, every distinct pronunciation of a word was kept — 8,383
+            words have more than one — and each phoneme re-encoded as a single character. No entry's
+            pronunciation was altered, and the derivation is reproducible with
+            <code>scripts/build-dict.py</code>. Its licence travels with it in
             <a href="https://github.com/drsamonline/app-poets-studio/blob/main/NOTICE.md">NOTICE.md</a>.</p>
           <p><b>The engine.</b> Syllables, stress, rhyme keys, metre and the form checks live in
             <code>docs/play/poetry.js</code> — one file, no build step, and it runs unchanged in Node,
@@ -426,7 +428,7 @@ open docs/play/index.html</pre>
         </a>
       </div>
       <p class="sub" style="margin:0 0 10px">Or open <code>docs/play/index.html</code> from the repository — that
-        file, beside its five siblings, is the whole app.</p>
+        file, beside its siblings, is the whole app.</p>
       <p class="sub" style="margin:0">On a phone or a desktop browser it also installs itself: a service worker
         caches the app once, so afterwards it opens with the network off, from an icon, with no
         server involved. And <code>node scripts/build-single.mjs</code> folds the whole thing into

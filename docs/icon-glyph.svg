@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48" height="48" role="img">
+  <!-- The glyph on its own, with no ground. docs/icon.svg is the same glyph on a
+       rounded square; the adaptive-icon layers and the monochrome icon need it
+       without the ground, because Android supplies one of its own. -->
+  <g fill="none" stroke="#ffffff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M34 12c-9 1-15 6-18 14l-4 8 8-4c8-3 13-9 14-18z"/>
+    <path d="M14 34l8-8"/>
+  </g>
+</svg>

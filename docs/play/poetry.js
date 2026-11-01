@@ -86,7 +86,10 @@
     return { words: words, size: size };
   }
 
-  var PUNCT = /^[^A-Za-z']+|[^A-Za-z']+$/g;
+  // A word is a word in any script. Stripping to A-Z threw away every Devanagari
+  // and Gujarati line whole, which made a ghazal in Hindi measure as no lines at
+  // all. \p{L} is a letter in any script; the apostrophe is kept for elisions.
+  var PUNCT = /^[^\p{L}\p{M}']+|[^\p{L}\p{M}']+$/gu;
 
   function normalise(word) {
     return String(word == null ? "" : word).toLowerCase().replace(PUNCT, "");
@@ -121,9 +124,126 @@
     "stopp'd": "S T AA1 P T", "drown'd": "D R AW1 N D", "shew'd": "SH OW1 D"
   };
 
+  // Words whose pronunciation changes what they mean. The dictionary keeps one
+  // reading each, which makes "read", "present" and "wind" a coin toss; these
+  // keep both, and the metre picks the one the line asks for.
+  var VARIANTS = {
+    read: ["R IY1 D", "R EH1 D"],
+    live: ["L IH1 V", "L AY1 V"],
+    wind: ["W IH1 N D", "W AY1 N D"],
+    lead: ["L IY1 D", "L EH1 D"],
+    close: ["K L OW1 S", "K L OW1 Z"],
+    use: ["Y UW1 S", "Y UW1 Z"],
+    house: ["HH AW1 S", "HH AW1 Z"],
+    tear: ["T IH1 R", "T EH1 R"],
+    bow: ["B OW1", "B AW1"],
+    row: ["R OW1", "R AW1"],
+    sow: ["S OW1", "S AW1"],
+    wound: ["W UW1 N D", "W AW1 N D"],
+    minute: ["M IH1 N AH0 T", "M AY0 N UW1 T"],
+    object: ["AA1 B JH EH0 K T", "AH0 B JH EH1 K T"],
+    subject: ["S AH1 B JH EH0 K T", "S AH0 B JH EH1 K T"],
+    present: ["P R EH1 Z AH0 N T", "P R IH0 Z EH1 N T"],
+    record: ["R EH1 K ER0 D", "R IH0 K AO1 R D"],
+    desert: ["D EH1 Z ER0 T", "D IH0 Z ER1 T"],
+    content: ["K AA1 N T EH0 N T", "K AH0 N T EH1 N T"],
+    contract: ["K AA1 N T R AE2 K T", "K AH0 N T R AE1 K T"],
+    invalid: ["IH1 N V AH0 L IH0 D", "IH2 N V AE1 L IH0 D"],
+    refuse: ["R EH1 F Y UW2 Z", "R IH0 F Y UW1 Z"],
+    entrance: ["EH1 N T R AH0 N S", "IH0 N T R AE1 N S"],
+    does: ["D AH1 Z", "D OW1 Z"],
+    // the -ed adjectives: one syllable in "the bless'd rain", two in "blessed are"
+    blessed: ["B L EH1 S T", "B L EH1 S IH0 D"],
+    learned: ["L ER1 N D", "L ER1 N IH0 D"],
+    aged: ["EY1 JH D", "EY1 JH IH0 D"],
+    beloved: ["B IH0 L AH1 V D", "B IH0 L AH1 V IH0 D"],
+    cursed: ["K ER1 S T", "K ER1 S IH0 D"],
+    winged: ["W IH1 NG D", "W IH1 NG IH0 D"],
+    dogged: ["D AO1 G D", "D AO1 G IH0 D"],
+    ragged: ["R AE1 G D", "R AE1 G IH0 D"],
+    naked: ["N EY1 K D", "N EY1 K IH0 D"],
+    crook: ["K R UH1 K", "K R UH1 K"],
+    bass: ["B EY1 S", "B AE1 S"],
+    dove: ["D AH1 V", "D OW1 V"]
+  };
+
+  function variantsOf(word) {
+    var v = VARIANTS[normalise(word)];
+    if (!v) return null;
+    return v.map(function (x) { return x.split(/\s+/); });
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* matra: the metre of Devanagari and Gujarati verse                   */
+  /* ------------------------------------------------------------------ */
+
+  // A syllable in these scripts is not a vowel phoneme, it is a written unit: a
+  // consonant carries its inherent "a" (1 matra), a matra sign replaces it with
+  // its own weight, and a halant kills it. A ghazal's couplets share a beher,
+  // and the practical test of that is an equal matra count per line — which is
+  // what this counts. (Urdu script is not counted: its short vowels are not
+  // written, so a matra count would be a guess dressed as a measurement.)
+  var SCRIPTS = {
+    devanagari: {
+      independent: { "\u0905": 1, "\u0906": 2, "\u0907": 1, "\u0908": 2, "\u0909": 1, "\u090A": 2,
+        "\u090B": 1, "\u0960": 2, "\u090C": 1, "\u090F": 1, "\u0910": 2, "\u0913": 1, "\u0914": 2,
+        "\u0950": 2 },
+      matra: { "\u093E": 2, "\u093F": 1, "\u0940": 2, "\u0941": 1, "\u0942": 2, "\u0943": 1,
+        "\u0944": 2, "\u0962": 1, "\u0947": 1, "\u0948": 2, "\u094B": 1, "\u094C": 2,
+        "\u0945": 1, "\u0946": 1, "\u094A": 1, "\u0949": 2 },
+      halant: "\u094D",
+      consonant: /[\u0915-\u0939\u0958-\u095F]/,
+      extra: { "\u0902": 0, "\u0901": 0, "\u0903": 1, "\u093C": 0, "\u093D": 0, "\u0951": 0, "\u0952": 0 }
+    },
+    gujarati: {
+      independent: { "\u0A85": 1, "\u0A86": 2, "\u0A87": 1, "\u0A88": 2, "\u0A89": 1, "\u0A8A": 2,
+        "\u0A8B": 1, "\u0AE0": 2, "\u0A8F": 1, "\u0A90": 2, "\u0A93": 1, "\u0A94": 2 },
+      matra: { "\u0ABE": 2, "\u0ABF": 1, "\u0AC0": 2, "\u0AC1": 1, "\u0AC2": 2, "\u0AC3": 1,
+        "\u0AC4": 2, "\u0AE2": 1, "\u0AC7": 1, "\u0AC8": 2, "\u0ACB": 1, "\u0ACC": 2,
+        "\u0AC5": 1, "\u0AC9": 1 },
+      halant: "\u0ACD",
+      consonant: /[\u0A95-\u0AB9\u0AF9]/,
+      extra: { "\u0A82": 0, "\u0A81": 0, "\u0A83": 1, "\u0ABC": 0, "\u0ABD": 0 }
+    }
+  };
+
+  function scriptOf(text) {
+    var t = String(text == null ? "" : text);
+    if (/[\u0900-\u097F]/.test(t)) return "devanagari";
+    if (/[\u0A80-\u0AFF]/.test(t)) return "gujarati";
+    return "latin";
+  }
+
+  // Count the matras in one line. The inherent vowel of a consonant counts 1,
+  // a halant makes it 0, and a matra sign replaces it — so "कल" is 2 and "क्"
+  // is 0. Anusvara and chandrabindu nasalise the vowel they follow and add
+  // nothing; visarga counts 1.
+  function matras(line, script) {
+    var table = SCRIPTS[script || scriptOf(line)];
+    if (!table) return 0;
+    var chars = Array.from(String(line == null ? "" : line));
+    var n = 0;
+    for (var i = 0; i < chars.length; i++) {
+      var c = chars[i];
+      if (table.independent[c] != null) { n += table.independent[c]; continue; }
+      if (table.consonant.test(c)) {
+        var v = 1;
+        var j = i + 1;
+        if (chars[j] === "\u093C" || chars[j] === "\u0ABC") j++;   // nukta sits between
+        if (chars[j] === table.halant) { v = 0; i = j; }
+        else if (table.matra[chars[j]] != null) { v = table.matra[chars[j]]; i = j; }
+        n += v;                          // the sign is spent: it is never counted again
+        continue;
+      }
+      if (table.matra[c] != null) { n += table.matra[c]; continue; }
+      if (table.extra && table.extra[c] != null) { n += table.extra[c]; continue; }
+    }
+    return n;
+  }
+
   function lookup(word, dict) {
     var w = normalise(word);
-    var p = (dict && dict.words && dict.words[w]) || ELIDED[w];
+    var p = (dict && dict.words && dict.words[w]) || ELIDED[w] || (VARIANTS[w] && VARIANTS[w][0]);
     if (!p) return null;
     return typeof p === "string" ? p.split(/\s+/) : p;
   }
@@ -152,32 +272,74 @@
   // Analyse one line. `unknown` is the honest part: those words were counted as
   // one syllable each so the totals still add up, and they are named so the
   // writer knows the count is an estimate for those words only.
-  function analyseLine(line, dict) {
-    var ws = words(line), phones = [], unknown = [];
-    ws.forEach(function (w) {
+  // Pick one reading per word. When the form asks for a syllable count, every
+  // combination of the ambiguous words is tried and the one that lands on the
+  // count wins — which is how "a record of the rain" and "to record the rain"
+  // are both measured correctly.
+  function chooseReading(readings, target) {
+    var ambiguous = [];
+    readings.forEach(function (r, i) { if (r && r.length > 1) ambiguous.push(i); });
+
+    function flatten(pickOf) {
+      var out = [];
+      readings.forEach(function (r, i) {
+        if (!r) return;
+        var p = (pickOf && pickOf[i] != null) ? (r[pickOf[i]] || r[0]) : r[0];
+        for (var k = 0; k < p.length; k++) out.push(p[k]);
+      });
+      return out;
+    }
+
+    if (!target || !ambiguous.length || ambiguous.length > 5) return flatten(null);
+    var best = null, n = Math.pow(2, ambiguous.length);
+    for (var mask = 0; mask < n; mask++) {
+      var pickOf = {};
+      ambiguous.forEach(function (i, bit) { pickOf[i] = (mask >> bit) & 1; });
+      var flat = flatten(pickOf);
+      var score = Math.abs(syllables(flat) - target);
+      if (!best || score < best.score) best = { score: score, phones: flat };
+    }
+    return best.phones;
+  }
+
+  function analyseLine(line, dict, target) {
+    var text = String(line == null ? "" : line);
+    var ws = words(text), unknown = [];
+    var readings = ws.map(function (w) {
       var p = lookup(w, dict);
-      if (p) { for (var i = 0; i < p.length; i++) phones.push(p[i]); }
-      else { unknown.push(w); }
+      if (!p) { unknown.push(w); return null; }
+      return variantsOf(w) || [p];
     });
+    var phones = chooseReading(readings, target);
     var counted = syllables(phones) + unknown.length;
     var pattern = stressPattern(phones) + new Array(unknown.length + 1).join("0");
+    var script = scriptOf(text);
     return {
-      text: String(line == null ? "" : line),
+      text: text,
       words: ws,
       phones: phones,
       syllables: counted,
       pattern: pattern,
       unknown: unknown,
+      script: script,
+      // only meaningful in a script that writes its vowels; null in Latin
+      matras: script === "latin" ? null : matras(text, script),
       // the pattern is only trustworthy if every word was known
       exact: unknown.length === 0
     };
   }
 
-  function analyse(text, dict) {
-    return String(text == null ? "" : text)
-      .replace(/\r/g, "")
-      .split("\n")
-      .map(function (line) { return analyseLine(line, dict); });
+  // `target` is a syllable count the caller wants a line to reach — a number for
+  // every line, or an array of them, one per line. It is only a tie-breaker
+  // between readings of the same word; it never changes what a word means.
+  function analyse(text, dict, target) {
+    var lines = String(text == null ? "" : text).replace(/\r/g, "").split("\n");
+    return lines.map(function (line, i) {
+      var t = null;
+      if (typeof target === "number") t = target;
+      else if (target && target.length) t = target[i] || null;
+      return analyseLine(line, dict, t);
+    });
   }
 
   /* ------------------------------------------------------------------ */
@@ -451,7 +613,8 @@
   function check(formId, text, dict, opts) {
     opts = opts || {};
     var form = FORMS[formId] || FORMS.free;
-    var all = analyse(text, dict);
+    // the count a line is meant to reach, so an ambiguous word is read to suit it
+    var all = analyse(text, dict, form.syllables || form.syllablePattern || null);
     var lines = nonEmpty(all);
     var issues = [];
 
@@ -464,7 +627,7 @@
       l.n = i + 1;
       var m = metre(l.pattern);
       l.metre = m;
-      if (l.unknown.length) {
+      if (l.unknown.length && l.script === "latin") {
         issue(l.n, "not in the dictionary: " + l.unknown.join(", ") +
           " — counted as one syllable each", "warn");
       }
@@ -542,6 +705,36 @@
     }
 
     if (form.id === "ghazal") {
+      // A ghazal written in Devanagari or Gujarati is measured in matras, not in
+      // English phonemes: the couplets share a beher, and the test of that is an
+      // equal matra count per line.
+      var script = scriptOf(text);
+      if (script !== "latin") {
+        if (lines.length < form.minLines || lines.length % 2 !== 0) {
+          issue(0, "a ghazal is an even number of lines, at least " + form.minLines +
+            "; this is " + lines.length);
+        }
+        var radifM = lines.length ? lastWord(lines[0].text) : "";
+        var first = lines.length ? lines[0].matras : 0;
+        if (!first) {
+          issue(0, "this does not count as verse in " + script + " — no matras found");
+        }
+        lines.forEach(function (l) {
+          if (radifM && lastWord(l.text) !== radifM) {
+            issue(l.n, "line " + l.n + " does not end on the radif \u201c" + radifM + "\u201d");
+          }
+          if (first && l.matras !== first) {
+            issue(l.n, "line " + l.n + " has " + l.matras + " matras; the first line has " +
+              first + " \u2014 every line of a ghazal shares the same beher");
+          }
+        });
+        var matraFail = issues.filter(function (i) { return i.level === "fail"; });
+        return {
+          form: form, pass: matraFail.length === 0, lines: lines, issues: issues,
+          failed: matraFail.length, warnings: issues.length - matraFail.length,
+          script: script, matras: lines.length ? lines[0].matras : 0
+        };
+      }
       if (lines.length < form.minLines || lines.length % 2 !== 0) {
         issue(0, "a ghazal is an even number of lines, at least " + form.minLines +
           "; this is " + lines.length);
@@ -639,6 +832,9 @@
     metre: metre,
     FORMS: FORMS,
     check: check,
-    schemeOf: schemeOf
+    schemeOf: schemeOf,
+    scriptOf: scriptOf,
+    matras: matras,
+    variants: variantsOf
   };
 });

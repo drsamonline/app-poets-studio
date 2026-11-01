@@ -249,7 +249,7 @@
         </div>
         <div class="badges">
           <img src="assets/badge-live.svg" alt="live: online">
-          <img src="assets/badge-tests.svg" alt="tests: 113 passing">
+          <img src="assets/badge-tests.svg" alt="tests: 132 passing">
           <img src="assets/badge-licence.svg" alt="licence: PolyForm NC 1.0.0">
           <img src="assets/badge-offline.svg" alt="offline: no network">
           <img src="assets/badge-deps.svg" alt="deps: 0 runtime">
@@ -298,7 +298,9 @@
           <h3>Forms that check you</h3>
           <p>Sonnet, blank verse, terza rima, rubaiyat quatrain, haiku, tanka, limerick, ghazal
             and your own stanza — a live pass or fail, per line, with the reason stated. A rhyme
-            sound spent twice on two different letters is an error, not a flourish.</p>
+            sound spent twice on two different letters is an error, not a flourish. A ghazal
+            written in Devanagari or Gujarati is measured in <em>mātrā</em> instead: every line of a
+            couplet must share the same count, which is the practical test of a shared beher.</p>
         </div>
       </div>
     </div>
@@ -316,6 +318,7 @@
         <button type="button" data-demo="haiku-off" aria-pressed="false">A haiku one syllable long</button>
         <button type="button" data-demo="tanka" aria-pressed="false">A tanka</button>
         <button type="button" data-demo="ghazal" aria-pressed="false">A ghazal with a radif</button>
+        <button type="button" data-demo="ghazal-hindi" aria-pressed="false">A ghazal in Devanagari</button>
         <button type="button" data-demo="rhyme:though" aria-pressed="false">Rhyme: “though”</button>
       </div>
 
@@ -343,7 +346,7 @@
       <div class="figs">
         <div class="fig"><b>124,085</b><span>words, each with a pronunciation</span></div>
         <div class="fig"><b>2.2 MB</b><span>of text, inside the app</span></div>
-        <div class="fig"><b>113</b><span>assertions, no test framework</span></div>
+        <div class="fig"><b>132</b><span>assertions, no test framework</span></div>
         <div class="fig"><b>0</b><span>runtime dependencies</span></div>
       </div>
     </div>
@@ -395,7 +398,7 @@
             <a href="https://github.com/drsamonline/app-poets-studio/blob/main/LICENSE">LICENSE</a>.</p>
           <p><b>Your drafts.</b> Kept in this browser, on this device. No account, no sync, no
             telemetry, and the app makes no network request at any point.</p>
-          <pre>node test-node.js      # 113 assertions, no dependencies
+          <pre>node test-node.js      # 132 assertions, no dependencies
 open docs/play/index.html</pre>
         </div>
       </div>

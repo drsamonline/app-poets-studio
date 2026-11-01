@@ -21,6 +21,12 @@ jobs:
           node-version: "20"
       - name: The engine, the dictionary and the forms
         run: node test-node.js
+      - name: The page itself, in a real DOM
+        # jsdom is a HARNESS dependency, installed here and never shipped: the app
+        # itself still has none, which is the promise the deps badge makes.
+        run: |
+          npm install --no-audit --no-fund --no-save jsdom
+          node test-ui.mjs
       - name: The app ships what it says it ships
         run: |
           set -euo pipefail

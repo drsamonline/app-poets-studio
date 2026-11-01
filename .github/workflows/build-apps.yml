@@ -45,3 +45,23 @@ jobs:
       contents: write
       pages: write
       id-token: write
+
+  announce:
+    name: Give the release its face
+    # The pipeline publishes the three builds and describes them in one sentence.
+    # This rewrites that sentence into something a person can act on: the icon, a
+    # table of builds, their sizes and their digests — read back from the release
+    # that was just published, so the page cannot describe a build that is not there.
+    needs: [app]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262   # was @v4
+      - name: Rewrite the rolling release notes
+        env:
+          GH_TOKEN: "${{ github.token }}"
+          RELEASE_TAG: app-latest
+          APP_NAME: app-poets-studio
+        run: bash scripts/release-notes.sh

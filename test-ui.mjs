@@ -74,7 +74,9 @@ ok("the dictionary parsed", w.PoetsStudio.dict.size > 120000, "size " + w.PoetsS
 ok("the footer reports the dictionary size",
   /124,\d{3} words/.test(d.getElementById("dictinfo").textContent),
   d.getElementById("dictinfo").textContent);
-ok("all five forms are offered", d.querySelectorAll("#form option").length === 5);
+ok("every form the engine has is offered",
+  d.querySelectorAll("#form option").length === Object.keys(w.Poetry.FORMS).length,
+  d.querySelectorAll("#form option").length + " of " + Object.keys(w.Poetry.FORMS).length);
 
 const SONNET = `The morning light is soft upon the wall
 A single bird begins to call the day
@@ -105,6 +107,38 @@ w.PoetsStudio.rhymes();
 const chips = [...d.querySelectorAll("#rhyme-out .chip")].map((c) => c.getAttribute("data-w"));
 ok("the rhyme finder fills in", chips.length > 0, chips.length + " chips");
 ok("and offers hat for cat", chips.includes("hat"));
+
+const letters = [...d.querySelectorAll("#measure .rh")].map((x) => x.textContent).join("");
+ok("the gutter letters the rhyme scheme", /^[A-G]{14}$/.test(letters), letters);
+ok("and the sonnet reads back as ABABCDCDEFEFGG", letters === "ABABCDCDEFEFGG", letters);
+
+const row = d.querySelector("#measure .row");
+ok("a line row is a button, for the notes", row.getAttribute("role") === "button");
+row.click();
+ok("clicking a line focuses its notes", !!d.getElementById("unfocus"));
+d.getElementById("unfocus").click();
+
+// a ghazal in Devanagari is counted in matras, not in syllables
+d.getElementById("poem").value = w.POEM_SAMPLES["ghazal-hindi"].text;
+d.getElementById("form").value = "ghazal";
+w.PoetsStudio.measure();
+const firstCount = d.querySelector("#measure .syl").textContent;
+ok("a Devanagari line shows its matras", firstCount === "17", firstCount);
+ok("the verdict says it passes", d.getElementById("verdict").className.indexOf("pass") >= 0,
+  d.getElementById("verdict").textContent);
+ok("the footer of the measure names the script",
+  /m\u0101tr\u0101|matra/i.test(d.getElementById("formnote").textContent),
+  d.getElementById("formnote").textContent);
+
+// nothing may depend on the browser dialogs the APK's WebView suppresses
+const appSource = inline;
+ok("the app never calls prompt, confirm or alert",
+  !/\b(prompt|confirm|alert)\s*\(/.test(appSource));
+ok("it has a dialog of its own", !!d.querySelector("dialog"));
+
+d.getElementById("poem").value = SONNET;
+d.getElementById("form").value = "sonnet";
+w.PoetsStudio.measure();
 
 d.getElementById("title").value = "ui test";
 d.getElementById("savenew").click();

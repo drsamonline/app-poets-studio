@@ -41,18 +41,25 @@ Master list **#130** · built from `QUEUE/app-poets-studio.md`.
   verse, terza rima, rubaiyat quatrain, haiku, tanka, limerick, ghazal, and a
   custom stanza with your own syllable counts and scheme. Each is a live
   pass/fail with the reason, per line.
+- **A ghazal in Devanagari or Gujarati** — measured in *mātrā*, not in English
+  phonemes. Every line of a couplet must share the same count, which is the
+  practical test of a shared beher; the script is named under the form.
+- **Two readings where a word has two** — `record`, `present`, `wind`, `read`,
+  `blessed`, `learned` and their kind keep both pronunciations, and the metre
+  picks the one the line asks for.
 - **Samples to load** — a sonnet that passes, a haiku, a tanka, a ghazal with a
-  radif, and one haiku that is a syllable long in its first line so you can see
-  the app say so. They live in `docs/play/samples.js`, and the tests assert the
+  radif, a ghazal in Devanagari, and one haiku that is a syllable long in its
+  first line so you can see the app say so. They live in `docs/play/samples.js`, and the tests assert the
   verdict each one is there to demonstrate.
 - **My words** — teach it a name, a dialect form or an invented word by giving
   its sounds in ARPAbet. It is appended to the dictionary text before parsing, so
   the metre and the rhyme finder treat it like any other word. It stays on the
   device.
-- **Writing journal** — drafts, versions and notes on the device: import a
-  journal as well as export it, diff two versions line by line, rename, copy,
-  and undo a delete. Export one poem, the whole journal as JSON, or every draft
-  as a ZIP.
+- **Writing journal** — drafts, versions and notes on the device, kept in
+  IndexedDB rather than localStorage so a journal of versions is not up against a
+  5 MB ceiling: import a journal as well as export it, diff two versions line by
+  line, rename, copy, and undo a delete. Export one poem, the whole journal as
+  JSON, or every draft as a ZIP.
 - **Print** — `Ctrl/Cmd+P` gives the poem and its measure, without the furniture.
 
 ## The three rhyme strengths
@@ -84,6 +91,18 @@ inexact for its apostrophes.
 The dictionary is BSD-2-Clause and its licence travels with it in
 [NOTICE.md](NOTICE.md).
 
+## The mātrā counter
+
+A syllable in Devanagari or Gujarati is a written unit, not a vowel phoneme: a
+consonant carries its inherent *a* (1 mātrā), a mātrā sign replaces it with its own
+weight, and a halant kills it — so `कल` is 2, `काल` is 3, and `क्` is 0. Anusvara and
+chandrabindu nasalise the vowel they follow and add nothing.
+
+The ghazal uses that count directly. Two lines that share a beher share a mātrā
+count, so that is what the form checks, line by line, and reports. Urdu script is
+deliberately **not** counted: its short vowels are not written, so a mātrā count
+there would be a guess dressed up as a measurement.
+
 ## What it refuses to do
 
 - **Write the poem.** There is no generator, no prompt box, no suggestion engine.
@@ -101,11 +120,13 @@ Open `docs/play/index.html`. That is the whole app — the kits, the samples and
 the dictionary sit next to it, so it works from `file://` and from GitHub Pages.
 
 ```
-node test-node.js             # 113 assertions, no dependencies
+node test-node.js             # 132 assertions, no dependencies
+node test-ui.mjs              # the page in a real DOM (needs jsdom, harness only)
 node scripts/build-single.mjs # one self-contained dist/poets-studio.html
 bash scripts/icons.sh         # the icon set, from docs/icon.svg
 python3 scripts/badges.py     # the badges, drawn locally
 bash scripts/shot.sh app sonnet
+bash scripts/release-notes.sh --dry-run
 ```
 
 Over http(s) the app also **installs itself**: `sw.js` caches the six files once,
@@ -129,11 +150,14 @@ Keyboard: `Ctrl/Cmd+S` save, `Alt+R` rhyme finder, `Alt+1…9` pick a form.
 | `docs/play/export-kit.js` | files and ZIP off the device |
 | `docs/play/sw.js` | the service worker: network-first HTML, cache-first assets |
 | `docs/play/manifest.webmanifest` | install metadata and the icon set |
-| `scripts/` | badges, icons, screenshots and the single-file build — all local |
+| `docs/icon.svg`, `docs/icon-glyph.svg` | the mark, and the mark without its ground |
+| `scripts/` | badges, icons, screenshots, release notes and the single-file build — all local |
 | `packaging/app-poets-studio.desktop` | the Linux launcher entry, with its icon |
+| `changes/`, `VERSION` | the changelog is written with the change, not reconstructed later |
+| `ENHANCEMENTS.md` | what is shipped, what is left, and why the rest is not done |
 
 Deep links open a case directly: `play/#/sonnet`, `#/tanka`, `#/haiku-off`,
-`#/ghazal`, `#/rhyme/though`. The landing page drives the embedded app with the
+`#/ghazal`, `#/ghazal-hindi`, `#/rhyme/though`. The landing page drives the embedded app with the
 same slugs over `postMessage`, so switching sample never reloads the dictionary.
 
 The form checks are deliberately honest about the difference between a

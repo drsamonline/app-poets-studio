@@ -307,6 +307,36 @@ ok("the metre message says which way the beat falls",
   /beat falls on the (first|second) syllable/.test(diagText), diagText);
 
 /* ------------------------------------------------------------------ */
+section("matra: the metre of Devanagari and Gujarati verse");
+
+eq("a script is recognised", P.scriptOf("\u0936\u093e\u092e"), "devanagari");
+eq("and another", P.scriptOf("\u0AB8\u0ABE\u0A82\u0A9C"), "gujarati");
+eq("and English is still English", P.scriptOf("evening"), "latin");
+
+eq("a consonant carries its inherent vowel", P.matras("\u0915\u0932", "devanagari"), 2);      // ka-la
+eq("a matra replaces it, it does not add to it", P.matras("\u0915\u093e\u0932", "devanagari"), 3);  // kaa-la
+eq("a halant kills it", P.matras("\u0915\u094d", "devanagari"), 0);
+eq("Gujarati counts the same way", P.matras("\u0A95\u0ABE\u0AB2", "gujarati"), 3);
+
+var HINDI = SAMPLES["ghazal-hindi"].text;
+var hg = P.check("ghazal", HINDI, DICT);
+ok("a ghazal in Devanagari passes", hg.pass, hg.issues.map(function (i) { return i.msg; }).join(" | "));
+eq("it is measured in matras, not phonemes", hg.script, "devanagari");
+eq("and every line has the same count", hg.matras, 17);
+ok("one line short of the beher fails",
+  !P.check("ghazal", HINDI.split("\n").slice(0, 3).join("\n") + "\n\u0938\u0941\u092c\u0939", DICT).pass);
+ok("a Latin ghazal is still measured in phonemes",
+  P.check("ghazal", SAMPLES.ghazal.text, DICT).script === undefined);
+
+/* ------------------------------------------------------------------ */
+section("one word, two readings");
+
+eq("an ambiguous word can be one syllable", P.analyse("the blessed rain", DICT, 3)[0].syllables, 3);
+eq("or two, when the metre asks", P.analyse("the blessed rain", DICT, 4)[0].syllables, 4);
+eq("a word with two readings offers both", P.variants("record").length, 2);
+ok("and an ordinary word offers none", P.variants("rain") === null);
+
+/* ------------------------------------------------------------------ */
 section("the page and the proof agree");
 
 var landing = fs.readFileSync(path.join(__dirname, "docs", "index.html"), "utf8");

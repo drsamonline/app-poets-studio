@@ -12,6 +12,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 OUT="$ROOT/docs/assets"
 SVG="$ROOT/docs/icon.svg"
+GLYPH="$ROOT/docs/icon-glyph.svg"
 CHROME="$(command -v chromium || command -v chromium-browser || command -v google-chrome)"
 [ -f "$SVG" ] || { echo "no icon at $SVG"; exit 1; }
 mkdir -p "$OUT"
@@ -56,3 +57,30 @@ done
 
 page "$TMP/m512.html" "$(maskable 512)"
 render "$TMP/m512.html" 512 "$OUT/icon-maskable-512.png"
+
+# Android adaptive icons: 108dp of canvas, the inner 72dp (66%) is the only part
+# guaranteed to survive the launcher's mask. The layers are rendered separately so
+# the platform can shape the background and keep the glyph whole.
+adaptive_ground () { # size -> a solid ground, the colour the app is
+  cat <<HTML
+<!doctype html><html><body style="margin:0;background:#e11d48;width:${1}px;height:${1}px"></body></html>
+HTML
+}
+
+adaptive_glyph () { # size, glyph-ratio -> the glyph alone, centred, transparent
+  local s="$1" g
+  g=$(( s * $2 / 100 ))
+  cat <<HTML
+<!doctype html><html><body style="margin:0;background:transparent;width:${s}px;height:${s}px;
+display:flex;align-items:center;justify-content:center">
+<img src="file://$GLYPH" width="$g" height="$g" style="display:block">
+</body></html>
+HTML
+}
+
+page "$TMP/ab.html" "$(adaptive_ground 432)"
+render "$TMP/ab.html" 432 "$OUT/icon-adaptive-background.png"
+page "$TMP/af.html" "$(adaptive_glyph 432 40)"
+render "$TMP/af.html" 432 "$OUT/icon-adaptive-foreground.png"
+page "$TMP/mono.html" "$(adaptive_glyph 432 52)"
+render "$TMP/mono.html" 432 "$OUT/icon-monochrome.png"

@@ -289,7 +289,10 @@
     // the writer sees the rhyme they are actually making, not the one they meant.
     var sch = Poetry.schemeOf(text, DICT, opts);
 
-    $("formnote").textContent = r.form.note || "";
+    $("formnote").textContent = (r.form.note || "") +
+      (r.script && r.script !== "latin"
+        ? " \u00b7 measured in m\u0101tr\u0101 (" + r.script + "), " + r.matras + " to the line"
+        : "");
 
     var rows = "";
     r.lines.forEach(function (l, i) {
@@ -298,10 +301,15 @@
         '" data-line="' + l.n + '" tabindex="0" role="button"' +
         ' title="Line ' + l.n + ' — click for its notes">' +
         '<span class="n">' + l.n + '</span>' +
-        '<span class="syl">' + l.syllables + '</span>' +
-        '<span><span class="pat">' + renderPattern(l.pattern) + '</span>' +
-        '<span class="metre">' + (l.metre ? l.metre.name : "") +
-        (l.unknown.length ? ' · ?' + esc(l.unknown.join(", ")) : "") + '</span></span>' +
+        '<span class="syl" title="' + (l.matras != null ? 'matras' : 'syllables') + '">' +
+        (l.matras != null ? l.matras : l.syllables) + '</span>' +
+        (l.matras != null
+          // an English stress pattern says nothing about a Devanagari line, and
+          // every word of it is "unknown" to an English dictionary by design
+          ? '<span class="metre">m\u0101tr\u0101</span>'
+          : '<span><span class="pat">' + renderPattern(l.pattern) + '</span>' +
+            '<span class="metre">' + (l.metre ? l.metre.name : "") +
+            (l.unknown.length ? ' · ?' + esc(l.unknown.join(", ")) : "") + '</span></span>') +
         '<span class="rh" title="rhyme ' + (sch.letters[i] || "·") + '">' + (sch.letters[i] || "·") + '</span>' +
         '</div>';
     });
@@ -440,10 +448,36 @@
   });
 
   /* ---------------- journal ---------------- */
+  /* Drafts live in IndexedDB, not localStorage: localStorage caps around 5 MB and
+     a journal of versions reaches it. localStorage is still the first read (it is
+     synchronous, so the page paints at once) and the fallback when IndexedDB is
+     unavailable. The migration runs once and the local copy is then dropped, so
+     the cap stops mattering. */
+  var DB = "poets-studio", STORE = "drafts", JKEY = "journal";
   var drafts = (window.Loom && Loom.storage.get("drafts", [])) || [];
   var lastDeleted = null;
+  var inIdb = false;
 
-  function persist() { if (window.Loom) Loom.storage.set("drafts", drafts); }
+  function persistLocal() { if (window.Loom) Loom.storage.set("drafts", drafts); }
+
+  function persist() {
+    if (window.Loom && Loom.storage.put && inIdb) {
+      Loom.storage.put(DB, STORE, JKEY, drafts).then(function () {
+        Loom.storage.remove("drafts");     // the mirror is not needed once the journal is safe
+      }).catch(function () { inIdb = false; persistLocal(); });
+      return;
+    }
+    persistLocal();
+  }
+
+  function loadJournal() {
+    if (!window.Loom || !Loom.storage.getItem || !window.indexedDB) return;
+    Loom.storage.getItem(DB, STORE, JKEY).then(function (saved) {
+      inIdb = true;
+      if (saved && saved.length) { drafts = saved; renderDrafts(); }
+      else if (drafts.length) { persist(); }   // one migration, then the cap stops mattering
+    }).catch(function () { inIdb = false; });  // no IndexedDB here: localStorage carries on
+  }
 
   function renderDrafts() {
     var ul = $("drafts");
@@ -737,6 +771,7 @@
   var starter = window.Loom ? Loom.storage.get("last", "") : "";
   poem.value = starter || "";
   renderDrafts();
+  loadJournal();
   applyDemo(fromHash());
   measure();
 

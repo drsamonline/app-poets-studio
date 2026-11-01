@@ -55,6 +55,18 @@
       text: "the winter harbour light\nthe ferry pulls away now\nno one is waving"
     },
 
+    "ghazal-hindi": {
+      form: "ghazal",
+      title: "\u0936\u093e\u092e \u2014 a ghazal in Devanagari, 17 m\u0101tr\u0101 a line",
+      expect: "pass",
+      text: [
+        "\u0936\u093e\u092e \u0922\u0932\u0924\u0940 \u0939\u0948 \u0924\u0947\u0930\u0947 \u0928\u093e\u092e \u0938\u0947 \u092b\u093f\u0930",
+        "\u0930\u093e\u0924 \u092d\u0930 \u091c\u093e\u0917\u0947 \u0939\u094b \u0924\u0947\u0930\u0947 \u0928\u093e\u092e \u0938\u0947 \u092b\u093f\u0930",
+        "\u0927\u0942\u092a \u0906\u0924\u0940 \u0939\u0948 \u0924\u0947\u0930\u0947 \u0928\u093e\u092e \u0938\u0947 \u092b\u093f\u0930",
+        "\u0938\u0941\u092c\u0939 \u0939\u094b\u0924\u0940 \u0939\u0948 \u0924\u094b \u0915\u0941\u091b \u0915\u093e\u092e \u0938\u0947 \u092b\u093f\u0930"
+      ].join("\n")
+    },
+
     tanka: {
       form: "tanka",
       title: "Sample tanka \u2014 5 \u00b7 7 \u00b7 5 \u00b7 7 \u00b7 7",

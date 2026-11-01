@@ -3,6 +3,10 @@
 Newest first. Generated from `changes/`;
 do not edit by hand.
 
+## 1.2.0 — 2026-11-01
+
+- The dictionary now carries **every** pronunciation, not one per word: 133,971 readings of 124,926 words, 8,383 of them with more than one. `fire` measures as one syllable or two and `read` as *reed* or *red*, and the metre picks the reading that lands on the count the form asks for. The derivation is reproducible — `python3 scripts/build-dict.py path/to/cmudict.dict` — and the file is smaller than the one it replaced. Two tabs on the same journal now tell each other when one of them saves, so neither silently reverts the other.
+
 ## 1.1.0 — 2026-11-01
 
 - Five more forms (blank verse, terza rima, rubaiyat quatrain, tanka, limerick) and a generic checker: a form is now data — line count, syllable pattern, foot, tolerance, scheme — so the next one is a dozen lines rather than a new branch. The metre message names the foot that broke and which way the beat falls there.

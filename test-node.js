@@ -232,17 +232,118 @@ var sc = P.schemeOf(SONNET, DICT);
 eq("the sonnet's scheme is read back as ABABCDCDEFEFGG", sc.letters.join(""), "ABABCDCDEFEFGG");
 
 /* ------------------------------------------------------------------ */
+section("the samples the app loads");
+
+/* The landing page drives these four through the app, and each one carries the
+   verdict it is there to demonstrate. If a sample stops measuring the way the
+   page says it does, the page is lying and this fails. */
+var SAMPLES = require("./docs/play/samples.js");
+var sampleIds = Object.keys(SAMPLES);
+ok("there are samples to load", sampleIds.length >= 4);
+
+sampleIds.forEach(function (id) {
+  var s = SAMPLES[id];
+  ok("sample \u201c" + id + "\u201d names a form the engine has", !!P.FORMS[s.form],
+    s.form);
+  var r = P.check(s.form, s.text, DICT);
+  eq("sample \u201c" + id + "\u201d is measured as \u201c" + s.expect + "\u201d",
+    r.pass ? "pass" : "fail", s.expect);
+});
+
+eq("the deliberately long haiku line is the only thing wrong with it",
+  P.check("haiku", SAMPLES["haiku-off"].text, DICT).failed, 1);
+eq("the sample sonnet is fourteen lines of ten syllables",
+  P.check("sonnet", SAMPLES.sonnet.text, DICT).lines.map(function (l) { return l.syllables; })
+    .filter(function (n) { return n !== 10; }).length, 0);
+
+/* ------------------------------------------------------------------ */
 section("the app ships what it says it ships");
 
 var dir = path.join(__dirname, "docs", "play");
-["index.html", "poetry.js", "dict.js", "web-kit.js", "export-kit.js"].forEach(function (f) {
+["index.html", "poetry.js", "dict.js", "samples.js", "web-kit.js", "export-kit.js"].forEach(function (f) {
   ok("docs/play/" + f + " exists", fs.existsSync(path.join(dir, f)));
 });
 var html = fs.readFileSync(path.join(dir, "index.html"), "utf8");
-["poetry.js", "dict.js", "web-kit.js", "export-kit.js"].forEach(function (f) {
+["poetry.js", "dict.js", "samples.js", "web-kit.js", "export-kit.js"].forEach(function (f) {
   ok("the app loads " + f, html.indexOf('src="' + f + '"') >= 0);
 });
 ok("the app makes no network request", !/https?:\/\//.test(html.replace(/https?:\/\/[^"'\s]*w3\.org[^"'\s]*/g, "")));
+
+/* ------------------------------------------------------------------ */
+section("the words verse actually uses");
+
+eq("an elided word is sounded, not guessed", P.syllables(P.lookup("dimm'd", DICT)), 1);
+eq("an elided word keeps the sounds it was contracted from",
+  P.lookup("o'er", DICT).join(" "), "AO1 R");
+ok("a word nobody knows is still unknown", P.lookup("zzzqqq", DICT) === null);
+
+/* ------------------------------------------------------------------ */
+section("the forms on the shelf");
+
+var TANKA = ["the winter harbour", "the ferry pulls away now", "no one is waving",
+  "and the gulls go on counting", "the minutes I did not spend"].join("\n");
+var tk = P.check("tanka", TANKA, DICT);
+ok("a tanka passes", tk.pass, tk.issues.map(function (i) { return i.msg; }).join(" | "));
+ok("a haiku is not a tanka", !P.check("tanka", SAMPLES.haiku.text, DICT).pass);
+ok("blank verse asks for the metre and not for a rhyme",
+  P.check("blank", "the morning comes and nobody is up\nthe kettle sings a song it has forgot", DICT).pass);
+
+var TERZA = ["the tent is up, the coffee is not hot", "and everyone has gone to look at rain",
+  "the kettle sings a song it has forgot", "the table has been laid for us again"].join("\n");
+ok("terza rima is a chain, so a broken chain fails", !P.check("terza", TERZA, DICT).pass);
+ok("the rubaiyat wants four lines, not five",
+  !P.check("rubaiyat", TERZA + "\nand nobody has come to eat the bread", DICT).pass);
+eq("a limerick allows a syllable of slack", P.FORMS.limerick.syllableSlack, 1);
+ok("every form in the shelf can be checked",
+  Object.keys(P.FORMS).every(function (id) { return !!P.check(id, "one line", DICT); }));
+
+/* ------------------------------------------------------------------ */
+section("a diagnosis, not a score");
+
+var diag = P.check("blank", "the morning comes and nobody is up\nso take the measure, keep it, and be free", DICT);
+var diagText = diag.issues.map(function (i) { return i.msg; }).join(" | ");
+ok("the metre message names the foot that broke", /foot \d+/.test(diagText), diagText);
+ok("the metre message says which way the beat falls",
+  /beat falls on the (first|second) syllable/.test(diagText), diagText);
+
+/* ------------------------------------------------------------------ */
+section("the page and the proof agree");
+
+var landing = fs.readFileSync(path.join(__dirname, "docs", "index.html"), "utf8");
+var slugs = (landing.match(/data-demo="([^"]+)"/g) || []).map(function (m) {
+  return m.replace(/^data-demo="/, "").replace(/"$/, "");
+});
+ok("the landing page drives at least three samples", slugs.length >= 3, slugs.join(", "));
+slugs.forEach(function (slug) {
+  ok("the landing page\u2019s \u201c" + slug + "\u201d opens something",
+    slug.indexOf("rhyme:") === 0 || !!SAMPLES[slug]);
+});
+
+/* ------------------------------------------------------------------ */
+section("it installs, and it never reaches out");
+
+["sw.js", "manifest.webmanifest"].forEach(function (f) {
+  ok("docs/play/" + f + " exists", fs.existsSync(path.join(dir, f)));
+});
+ok("the app offers itself for install", html.indexOf('rel="manifest"') >= 0);
+ok("the app registers its worker", html.indexOf("serviceWorker.register") >= 0);
+
+var appJs = ["poetry.js", "samples.js", "web-kit.js", "export-kit.js"].map(function (f) {
+  return fs.readFileSync(path.join(dir, f), "utf8");
+}).join("\n") + html;
+ok("no network API is used anywhere in the app",
+  !/(fetch|XMLHttpRequest|WebSocket|EventSource)\s*\(/.test(appJs));
+
+/* ------------------------------------------------------------------ */
+section("the badge tells the truth");
+
+/* This is the last assertion on purpose: it compares the badge to the number
+   this run is about to print, so a green suite can never sit next to a stale
+   "74 passing" on the README and the landing page. */
+var badge = fs.readFileSync(path.join(__dirname, "docs", "assets", "badge-tests.svg"), "utf8");
+var claim = (badge.match(/>([0-9,]+) passing</) || [])[1];
+eq("the tests badge claims the number this run prints", claim,
+  String(passed + 1).replace(/\B(?=(\d{3})+(?!\d))/g, ","));
 
 /* ------------------------------------------------------------------ */
 console.log("\n" + passed + " passed, " + failed + " failed");

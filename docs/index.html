@@ -3,55 +3,502 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Poet's Studio — workshop</title>
-<meta name="description" content="Rhyme, metre and fixed forms — a workshop that measures what you actually wrote.">
+<title>Poet's Studio — a workshop that measures the poem you wrote</title>
+<meta name="description" content="Rhyme by sound, metre counted line by line, and sonnets, haiku and ghazals checked as constraints. Offline, no accounts, no generator.">
+<meta name="theme-color" content="#0d1117">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
 <style>
-  :root{--bg:#fdf7f4;--card:#fffdfb;--ink:#241a1c;--dim:#7c6a6d;
-        --line:#eddfe0;--acc:#be123c;}
-  *{box-sizing:border-box}
-  body{margin:0;background:var(--bg);color:var(--ink);font-family:ui-serif, Georgia, 'Iowan Old Style', 'Times New Roman', serif;}
-  a{color:inherit}
-  .dl{display:flex;gap:9px;flex-wrap:wrap;margin:0}
-  .dl a{text-decoration:none;border:1px solid var(--line);border-radius:8px;
-        padding:10px 14px;font-size:13px;font-weight:600;background:var(--card);color:var(--ink)}
-  .dl a:hover{border-color:var(--acc);color:var(--acc)}
-  .dl small{display:block;font-weight:400;color:var(--dim);font-size:11px;margin-top:2px}
-  footer{margin-top:38px;padding-top:14px;border-top:1px solid var(--line);
-         color:var(--dim);font-size:12.5px}
-  footer a{color:var(--acc);text-decoration:none}
+  /* ------------------------------------------------------------------
+     Poet's Studio — landing page.
 
-  .col{max-width:560px;margin:0 auto;padding:56px 26px 80px;text-align:center}
-  .crumb{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--dim);text-decoration:none}
-  h1{font-size:clamp(2.1rem,6vw,3rem);font-style:italic;font-weight:500;letter-spacing:-.02em;margin:34px 0 12px}
-  .tag{font-size:1.1rem;color:var(--dim);font-style:italic;max-width:38ch;margin:0 auto 26px;line-height:1.6}
-  .go{display:inline-block;background:var(--acc);color:#fff;text-decoration:none;
-      padding:13px 24px;border-radius:999px;font-weight:600;font-size:15px;font-style:normal}
-  .verse{margin:42px 0 0;text-align:left;border-top:1px solid var(--line);padding-top:26px}
-  .verse p{margin:0 0 20px;color:var(--dim);font-size:15px;line-height:1.75}
-  .verse b{color:var(--ink);font-weight:600;font-style:normal}
-  h2{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--dim);margin:34px 0 12px;font-style:normal}
-  .dl{justify-content:center}
-  .note{color:var(--dim);font-size:13px;margin-top:20px;font-style:italic}
+     The app is warm rose paper, a serif face, soft rounded cards and a
+     radial glow. This page must not be that again: cool ink, a tight
+     sans for display, monospace for every label, 2px corners, one cyan
+     accent. The motif is the proof sheet — margin line numbers and
+     scansion marks, because the app's whole job is marking up a poem.
+
+     Light is the base palette; the system preference decides first
+     paint; the toggle overrides it and is remembered under a key of its
+     own, so setting one surface never changes the other.
+     ------------------------------------------------------------------ */
+  :root{
+    --bg:#f4f6f8; --panel:#ffffff; --ink:#0f1620; --dim:#5a6875; --rule:#dde3e9;
+    --acc:#0e7490; --acc2:#0b5c73; --band:#0d1117; --bandink:#eef3f7; --banddim:#93a3b1;
+    --paper:#fbfcfd; --tint:rgba(14,116,144,.06);
+    --sans:ui-sans-serif,system-ui,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+    --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,'Liberation Mono',monospace;
+    --shadow:0 20px 44px -32px rgba(15,22,32,.55);
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#0d1117; --panel:#151b23; --ink:#eaf0f5; --dim:#93a3b1; --rule:#242d38;
+      --acc:#22d3ee; --acc2:#67e8f9; --band:#080b0f; --bandink:#eaf0f5; --banddim:#8b9aa8;
+      --paper:#11171f; --tint:rgba(34,211,238,.08);
+      --shadow:0 20px 44px -32px rgba(0,0,0,.9);
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0d1117; --panel:#151b23; --ink:#eaf0f5; --dim:#93a3b1; --rule:#242d38;
+    --acc:#22d3ee; --acc2:#67e8f9; --band:#080b0f; --bandink:#eaf0f5; --banddim:#8b9aa8;
+    --paper:#11171f; --tint:rgba(34,211,238,.08);
+    --shadow:0 20px 44px -32px rgba(0,0,0,.9);
+  }
+
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);
+       font-size:16.5px;line-height:1.6;-webkit-font-smoothing:antialiased}
+  a{color:inherit}
+  img{max-width:100%;display:block}
+  .wrap{max-width:1140px;margin:0 auto;padding:0 26px}
+  .mono{font-family:var(--mono)}
+  .eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase;
+           color:var(--acc);margin:0 0 16px}
+
+  /* ---------- top bar ---------- */
+  .top{position:sticky;top:0;z-index:30;border-bottom:1px solid var(--rule);
+       background:color-mix(in srgb, var(--bg) 90%, transparent);backdrop-filter:blur(10px)}
+  .top .wrap{display:flex;align-items:center;gap:16px;height:60px}
+  .brand{display:flex;align-items:center;gap:10px;text-decoration:none;
+         font-weight:800;font-size:16.5px;letter-spacing:-.02em}
+  .brand svg{width:24px;height:24px;border-radius:5px;flex:none}
+  .top nav{display:flex;gap:20px;margin-left:auto;font-family:var(--mono);font-size:11.5px;
+           letter-spacing:.08em;text-transform:uppercase}
+  .top nav a{text-decoration:none;color:var(--dim)}
+  .top nav a:hover{color:var(--acc)}
+  #theme{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;
+         background:transparent;border:1px solid var(--rule);color:var(--ink);
+         border-radius:2px;padding:7px 12px;cursor:pointer}
+  #theme:hover{border-color:var(--acc);color:var(--acc)}
+  @media (max-width:840px){ .top nav{display:none} }
+
+  /* ---------- hero ---------- */
+  .hero{padding:66px 0 58px;border-bottom:1px solid var(--rule);
+        background:linear-gradient(180deg, var(--tint), transparent 62%)}
+  .hero .wrap{display:grid;grid-template-columns:1.06fr .94fr;gap:54px;align-items:center}
+  @media (max-width:920px){ .hero .wrap{grid-template-columns:1fr;gap:40px} }
+  h1{font-weight:800;font-size:clamp(2.6rem,5.8vw,4.05rem);line-height:.98;
+     letter-spacing:-.038em;margin:0 0 20px}
+  h1 span{display:block;color:var(--acc)}
+  .lede{font-size:1.14rem;color:var(--dim);max-width:46ch;margin:0 0 28px}
+  .lede b{color:var(--ink);font-weight:700}
+  .cta{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:0 0 28px}
+  .btn{text-decoration:none;font-weight:700;font-size:14.5px;padding:13px 22px;border-radius:2px;
+       border:1px solid transparent;display:inline-flex;align-items:center;gap:8px;letter-spacing:-.01em}
+  .btn.p{background:var(--acc);color:#fff}
+  :root[data-theme="dark"] .btn.p{color:#04191d}
+  @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) .btn.p{color:#04191d} }
+  :root[data-theme="dark"] .guided button[aria-pressed="true"]{color:#04191d}
+  @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) .guided button[aria-pressed="true"]{color:#04191d} }
+  .btn.p:hover{background:var(--acc2)}
+  .btn.s{border-color:var(--rule);color:var(--ink)}
+  .btn.s:hover{border-color:var(--acc);color:var(--acc)}
+  .badges{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+  .badges img{height:22px;width:auto}
+
+  /* the proof sheet — the page's motif, drawn as type */
+  .proof{background:var(--panel);border:1px solid var(--rule);border-radius:2px;
+         padding:22px 22px 18px;box-shadow:var(--shadow);position:relative}
+  .proof .tag{display:flex;justify-content:space-between;align-items:baseline;gap:12px;
+              font-family:var(--mono);font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;
+              color:var(--dim);border-bottom:1px solid var(--rule);padding-bottom:12px;margin-bottom:4px}
+  .proof .tag b{color:var(--acc);font-weight:600}
+  .pl{display:grid;grid-template-columns:20px 1fr auto;gap:10px;align-items:baseline;
+      padding:9px 0;border-bottom:1px dashed var(--rule);font-size:14px;line-height:1.45}
+  .pl:last-of-type{border-bottom:0}
+  .pl .n{font-family:var(--mono);font-size:10.5px;color:var(--dim);text-align:right}
+  .pl .m{font-family:var(--mono);font-size:11px;letter-spacing:2px;color:var(--acc);white-space:nowrap}
+  .pl .m i{font-style:normal;color:var(--dim);opacity:.55}
+  .pl.flag{background:var(--tint)}
+  .pl.flag .m{color:var(--acc);font-weight:700}
+  .proof .note{font-family:var(--mono);font-size:11.5px;color:var(--dim);margin:14px 0 0;
+               line-height:1.55}
+
+  /* ---------- scansion band ---------- */
+  .rule-band{background:var(--band);color:var(--bandink);overflow:hidden;padding:10px 0;
+             font-family:var(--mono);font-size:12px;letter-spacing:.55em;white-space:nowrap}
+  .rule-band span{opacity:.55}
+
+  /* ---------- sections ---------- */
+  section{padding:72px 0}
+  h2.big{font-weight:800;font-size:clamp(1.6rem,3.2vw,2.25rem);letter-spacing:-.03em;
+         line-height:1.12;margin:0 0 14px}
+  h2.big em{font-style:normal;color:var(--acc)}
+  .sub{color:var(--dim);max-width:58ch;margin:0 0 36px}
+
+  /* three cards */
+  .cards{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+  @media (max-width:880px){ .cards{grid-template-columns:1fr} }
+  .card{background:var(--panel);border:1px solid var(--rule);border-radius:2px;padding:24px 22px 26px}
+  .card .glyph{font-family:var(--mono);font-size:12px;letter-spacing:2px;color:var(--acc);
+               margin:0 0 16px;height:18px;overflow:hidden;white-space:nowrap}
+  .card .glyph i{font-style:normal;color:var(--dim);opacity:.5}
+  .card h3{font-size:17.5px;font-weight:700;letter-spacing:-.02em;margin:0 0 8px}
+  .card p{margin:0;font-size:14.6px;color:var(--dim)}
+  .card p b{color:var(--ink);font-weight:700}
+  .card code{font-family:var(--mono);font-size:.87em;background:var(--tint);padding:1px 5px;border-radius:2px}
+
+  /* demo */
+  #demo{background:var(--panel);border-top:1px solid var(--rule);border-bottom:1px solid var(--rule)}
+  .guided{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 18px}
+  .guided button{font-family:var(--mono);font-size:11.5px;letter-spacing:.04em;padding:9px 14px;
+                 border-radius:2px;cursor:pointer;background:transparent;border:1px solid var(--rule);
+                 color:var(--dim)}
+  .guided button:hover{border-color:var(--acc);color:var(--acc)}
+  .guided button[aria-pressed="true"]{background:var(--acc);border-color:var(--acc);color:#fff}
+  .shell{border:1px solid var(--rule);border-radius:2px;overflow:hidden;background:var(--bg);
+         box-shadow:var(--shadow)}
+  .chrome{display:flex;align-items:center;gap:10px;padding:9px 13px;border-bottom:1px solid var(--rule);
+          font-family:var(--mono);font-size:11px;color:var(--dim);letter-spacing:.04em}
+  .dots{display:flex;gap:5px}
+  .dots i{width:7px;height:7px;border-radius:50%;background:var(--rule);display:block}
+  .dots i:first-child{background:var(--acc);opacity:.8}
+  .stage{position:relative;height:610px;background:var(--bg)}
+  @media (max-width:760px){ .stage{height:480px} }
+  .stage img,.stage iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+  .stage img{object-fit:cover;object-position:top center}
+  .stage iframe{opacity:0;transition:opacity .35s ease}
+  .shell.live iframe{opacity:1}
+  .shell.live img{opacity:0;transition:opacity .35s ease}
+  .framenote{font-size:13px;color:var(--dim);margin:14px 0 0;max-width:62ch}
+
+  /* numbers */
+  #numbers{background:var(--band);color:var(--bandink)}
+  #numbers .eyebrow{color:var(--acc)}
+  #numbers h2.big{color:var(--bandink)}
+  #numbers h2.big em{color:var(--acc)}
+  #numbers .sub{color:var(--banddim)}
+  .figs{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;
+        background:color-mix(in srgb,#fff 13%, transparent);
+        border:1px solid color-mix(in srgb,#fff 13%, transparent)}
+  @media (max-width:880px){ .figs{grid-template-columns:1fr 1fr} }
+  .fig{background:var(--band);padding:24px 20px}
+  .fig b{display:block;font-size:clamp(1.5rem,2.9vw,2.05rem);font-weight:800;
+         letter-spacing:-.035em;line-height:1.05}
+  .fig span{display:block;font-family:var(--mono);font-size:11px;letter-spacing:.06em;
+            color:var(--banddim);margin-top:8px;line-height:1.5;text-transform:uppercase}
+
+  /* refusals */
+  .refuse{display:grid;grid-template-columns:repeat(3,1fr);gap:26px;margin-top:6px}
+  @media (max-width:880px){ .refuse{grid-template-columns:1fr;gap:20px} }
+  .refuse div{border-top:2px solid var(--acc);padding-top:14px}
+  .refuse h3{font-size:17px;margin:0 0 6px;font-weight:700;letter-spacing:-.02em}
+  .refuse p{margin:0;font-size:14.6px;color:var(--dim)}
+
+  /* sources */
+  .cols{display:grid;grid-template-columns:1fr 1fr;gap:44px}
+  @media (max-width:880px){ .cols{grid-template-columns:1fr;gap:30px} }
+  .cols p{margin:0 0 14px;color:var(--dim);font-size:15px}
+  .cols p b{color:var(--ink);font-weight:700}
+  .cols a{color:var(--acc);text-decoration:none;border-bottom:1px solid color-mix(in srgb,var(--acc) 40%, transparent)}
+  code{font-family:var(--mono);font-size:.88em}
+  pre{font-family:var(--mono);font-size:12.5px;background:var(--panel);border:1px solid var(--rule);
+      border-radius:2px;padding:14px 16px;overflow:auto;color:var(--ink);margin:0}
+
+  /* install */
+  #install{border-top:1px solid var(--rule)}
+  .dl{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:0 0 22px}
+  @media (max-width:880px){ .dl{grid-template-columns:1fr} }
+  .dl a{display:flex;align-items:center;gap:13px;text-decoration:none;padding:16px 18px;
+        background:var(--panel);border:1px solid var(--rule);border-radius:2px}
+  .dl a:hover{border-color:var(--acc)}
+  .dl svg{width:24px;height:24px;flex:none;color:var(--acc)}
+  .dl b{display:block;font-size:14.5px;font-weight:700}
+  .dl small{display:block;font-family:var(--mono);font-size:11px;color:var(--dim);margin-top:3px}
+
+  /* footer */
+  footer{border-top:1px solid var(--rule);padding:30px 0 44px;color:var(--dim);
+         font-family:var(--mono);font-size:11.5px;letter-spacing:.03em}
+  footer .wrap{display:flex;gap:16px;flex-wrap:wrap;align-items:center}
+  footer a{color:var(--acc);text-decoration:none}
+  footer .sp{flex:1}
 </style>
 </head>
 <body>
 
-<div class="col">
-  <a class="crumb" href="https://drsamonline.github.io/">← all projects</a>
-  <h1>Poet's Studio</h1>
-  <p class="tag">Rhyme, metre and fixed forms — a workshop that measures what you actually wrote.</p>
-  <div class="acts"><a class="go" href="play/">Open the workshop →</a></div>
-  <div class="verse">
-    <p><b>Meter, counted</b><br>Syllables and stress, marked line by line.</p><p><b>Rhyme, checked</b><br>It tells you what rhymes and, more usefully, what nearly does.</p><p><b>Fixed forms</b><br>Sonnets and their cousins, with the rules kept in view.</p>
+<header class="top">
+  <div class="wrap">
+    <a class="brand" href="#top">
+      <svg viewBox="0 0 48 48" aria-hidden="true"><rect width="48" height="48" rx="11" fill="#e11d48"/><g fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M34 12c-9 1-15 6-18 14l-4 8 8-4c8-3 13-9 14-18z"/><path d="M14 34l8-8"/></g></svg>
+      Poet's Studio
+    </a>
+    <nav>
+      <a href="#measure">The measure</a>
+      <a href="#demo">Try it</a>
+      <a href="#numbers">Numbers</a>
+      <a href="#sources">Sources</a>
+      <a href="#install">Install</a>
+    </nav>
+    <button id="theme" type="button" aria-label="Switch between light and dark">Dark</button>
   </div>
-  <h2>Install</h2>
-  <div class="dl">
-      <a href="https://github.com/drsamonline/app-poets-studio/releases/download/app-latest/app-poets-studio.apk">Android<small>APK</small></a>
-      <a href="https://github.com/drsamonline/app-poets-studio/releases/download/app-latest/app-poets-studio-portable.exe">Windows<small>EXE</small></a>
-      <a href="https://github.com/drsamonline/app-poets-studio/releases/download/app-latest/app-poets-studio-linux">Linux<small>binary</small></a>
+</header>
+
+<main id="top">
+
+  <div class="hero">
+    <div class="wrap">
+      <div>
+        <p class="eyebrow">#130 · offline workshop</p>
+        <h1>It measures<br>what you<span>wrote.</span></h1>
+        <p class="lede">Poet's Studio counts the metre as you type, names the rhyme sound of every
+          line ending, and tells you whether the sonnet you are attempting <b>actually is one</b>.
+          It never writes a line for you.</p>
+        <div class="cta">
+          <a class="btn p" href="play/">Open the workshop →</a>
+          <a class="btn s" href="#demo">See it measure a sonnet</a>
+        </div>
+        <div class="badges">
+          <img src="assets/badge-live.svg" alt="live: online">
+          <img src="assets/badge-tests.svg" alt="tests: 113 passing">
+          <img src="assets/badge-licence.svg" alt="licence: PolyForm NC 1.0.0">
+          <img src="assets/badge-offline.svg" alt="offline: no network">
+          <img src="assets/badge-deps.svg" alt="deps: 0 runtime">
+          <img src="assets/badge-dict.svg" alt="dictionary: 124,085 words">
+        </div>
+      </div>
+
+      <div class="proof" aria-hidden="true">
+        <p class="tag"><span>proof · sonnet 14 lines</span><b>passes</b></p>
+        <div class="pl"><span class="n">1</span><span>I set the words in rows and let them stand</span><span class="m">—<i>·</i>—<i>·</i>—<i>·</i>—<i>·</i>—</span></div>
+        <div class="pl"><span class="n">2</span><span>and count the beats the way a reader would</span><span class="m">—<i>·</i>—<i>·</i>—<i>·</i>—<i>·</i>—</span></div>
+        <div class="pl"><span class="n">3</span><span>the metre is a ruler in the hand</span><span class="m">—<i>·</i>—<i>·</i>—<i>·</i>—<i>·</i>—</span></div>
+        <div class="pl flag"><span class="n">4</span><span>the winter harbour light</span><span class="m">6 · wants 5</span></div>
+        <div class="pl"><span class="n">5</span><span>and read the sentence that I never meant</span><span class="m">sent / meant</span></div>
+        <p class="note">Line 4 is a haiku line in a sonnet’s place, and the app says so
+          instead of smoothing it over.</p>
+      </div>
     </div>
-  <p class="note">Entirely offline. Your drafts stay in your browser.</p>
-  <footer><a href="https://github.com/drsamonline/app-poets-studio">Source</a> · <a href="https://github.com/drsamonline/app-poets-studio/blob/main/LICENSE">Licence</a> · Dr. Sohil Momin</footer>
-</div>
+  </div>
+
+  <div class="rule-band" aria-hidden="true"><span>— · — · — · — · — · — · — · — · — · — · — · — · — · — · — · — · — · — · — · — · — · — · — · — · — · — · — · — · — · — · — · — · — · — · — · — · — · — · — · — · — · — · — · —</span></div>
+
+  <section id="measure">
+    <div class="wrap">
+      <p class="eyebrow">Three readings</p>
+      <h2 class="big">It reads the page, <em>and says what it finds</em></h2>
+      <p class="sub">No suggestions, no autocomplete, no “improve this line”. Three readings, each of
+        which you can check by hand.</p>
+
+      <div class="cards">
+        <div class="card">
+          <p class="glyph">day<i> / </i>grey<i> · </i>cat<i> / </i>cot<i> · </i>cat<i> / </i>cap</p>
+          <h3>Rhyme, by sound</h3>
+          <p>Perfect, near and slant rhymes from a pronouncing dictionary — by sound, never by
+            spelling. <code>though</code> and <code>cough</code> are told apart, and
+            <code>say</code> rhymes with <code>away</code>.</p>
+        </div>
+        <div class="card">
+          <p class="glyph">—<i>·</i>—<i>·</i>—<i>·</i>—<i>·</i>—</p>
+          <h3>Metre, counted</h3>
+          <p>Every line, with its stress pattern as a running bar. The metre is <b>named</b> only when
+            at least 60% of its feet fit; otherwise the pattern is shown and the name is left off.</p>
+        </div>
+        <div class="card">
+          <p class="glyph">ABAB<i> </i>CDCD<i> </i>EFEF<i> </i>GG</p>
+          <h3>Forms that check you</h3>
+          <p>Sonnet, blank verse, terza rima, rubaiyat quatrain, haiku, tanka, limerick, ghazal
+            and your own stanza — a live pass or fail, per line, with the reason stated. A rhyme
+            sound spent twice on two different letters is an error, not a flourish.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="demo">
+    <div class="wrap">
+      <p class="eyebrow">The workshop itself, in this page</p>
+      <h2 class="big">Nothing installed. <em>Nothing uploaded.</em></h2>
+      <p class="sub">The frame below is the real app — the same file the Android build ships — running
+        here with its dictionary already loaded. Press a sample to watch the measure work.</p>
+
+      <div class="guided" role="group" aria-label="Samples to load">
+        <button type="button" data-demo="sonnet" aria-pressed="true">A sonnet that passes</button>
+        <button type="button" data-demo="haiku-off" aria-pressed="false">A haiku one syllable long</button>
+        <button type="button" data-demo="tanka" aria-pressed="false">A tanka</button>
+        <button type="button" data-demo="ghazal" aria-pressed="false">A ghazal with a radif</button>
+        <button type="button" data-demo="rhyme:though" aria-pressed="false">Rhyme: “though”</button>
+      </div>
+
+      <div class="shell" id="shell">
+        <div class="chrome">
+          <span class="dots"><i></i><i></i><i></i></span>
+          <span>app-poets-studio / play /</span>
+        </div>
+        <div class="stage">
+          <img id="poster" src="assets/app-desktop.png" alt="Poet's Studio measuring a sonnet: fourteen lines, each with its syllable count and stress pattern">
+          <iframe id="frame" title="Poet's Studio, the app" loading="eager"></iframe>
+        </div>
+      </div>
+      <p class="framenote">The sample marked <em>one syllable long</em> is deliberately wrong. The app's
+        job is to say so, not to make it right.</p>
+    </div>
+  </section>
+
+  <section id="numbers">
+    <div class="wrap">
+      <p class="eyebrow">Counted, not claimed</p>
+      <h2 class="big">The whole dictionary travels <em>inside the file</em></h2>
+      <p class="sub">124,085 words of the CMU Pronouncing Dictionary, re-encoded one phoneme to one
+        character, so the app can rhyme and scan with the network switched off.</p>
+      <div class="figs">
+        <div class="fig"><b>124,085</b><span>words, each with a pronunciation</span></div>
+        <div class="fig"><b>2.2 MB</b><span>of text, inside the app</span></div>
+        <div class="fig"><b>113</b><span>assertions, no test framework</span></div>
+        <div class="fig"><b>0</b><span>runtime dependencies</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="refuses">
+    <div class="wrap">
+      <p class="eyebrow">What it refuses to do</p>
+      <h2 class="big">Three refusals <em>worth keeping</em></h2>
+      <div class="refuse">
+        <div>
+          <h3>Write the poem</h3>
+          <p>No generator, no prompt box, no suggestion engine. There is nowhere to ask it for a line,
+            because it would not know your line.</p>
+        </div>
+        <div>
+          <h3>Guess at an unknown word</h3>
+          <p>An unknown word is named in the line, counted as one syllable, and the line is marked
+            inexact. A count that is quietly wrong is worse than one that admits it is unsure.</p>
+        </div>
+        <div>
+          <h3>Call an irregular line regular</h3>
+          <p>A metre is named only when enough of its feet fit. Otherwise the pattern is shown and the
+            name is left off — the honest outcome, and the useful one.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="sources">
+    <div class="wrap">
+      <p class="eyebrow">Sources and licence</p>
+      <h2 class="big">Whose words these are</h2>
+      <div class="cols">
+        <div>
+          <p><b>The dictionary.</b> <code>docs/play/dict.js</code> is a derived work of the
+            <b>CMU Pronouncing Dictionary</b> (cmusphinx/cmudict), BSD-2-Clause, redistributed here as
+            source. Entries that are not plain lowercase English words were dropped, one pronunciation
+            per word was kept, and each phoneme re-encoded as a single character. No entry's
+            pronunciation was altered. Its licence travels with it in
+            <a href="https://github.com/drsamonline/app-poets-studio/blob/main/NOTICE.md">NOTICE.md</a>.</p>
+          <p><b>The engine.</b> Syllables, stress, rhyme keys, metre and the form checks live in
+            <code>docs/play/poetry.js</code> — one file, no build step, and it runs unchanged in Node,
+            which is why the tests test the app.</p>
+        </div>
+        <div>
+          <p><b>The app.</b> PolyForm Noncommercial 1.0.0 — free for any noncommercial purpose;
+            commercial use needs a licence from the author. See
+            <a href="https://github.com/drsamonline/app-poets-studio/blob/main/LICENSE">LICENSE</a>.</p>
+          <p><b>Your drafts.</b> Kept in this browser, on this device. No account, no sync, no
+            telemetry, and the app makes no network request at any point.</p>
+          <pre>node test-node.js      # 113 assertions, no dependencies
+open docs/play/index.html</pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="install">
+    <div class="wrap">
+      <p class="eyebrow">Take it with you</p>
+      <h2 class="big">Install it, or just open the file</h2>
+      <p class="sub">Every build is the same HTML with the same dictionary inside it. Nothing is fetched
+        at first run, because there is nothing left to fetch.</p>
+      <div class="dl">
+        <a href="https://github.com/drsamonline/app-poets-studio/releases/download/app-latest/app-poets-studio.apk">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 20V10a7 7 0 0 1 14 0v10"/><path d="M3 20h18"/><path d="M8 5 6.5 2.5M16 5l1.5-2.5"/><circle cx="9.5" cy="12" r=".7" fill="currentColor"/><circle cx="14.5" cy="12" r=".7" fill="currentColor"/></svg>
+          <span><b>Android</b><small>APK · signed, offline</small></span>
+        </a>
+        <a href="https://github.com/drsamonline/app-poets-studio/releases/download/app-latest/app-poets-studio-portable.exe">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="8" height="8"/><rect x="13" y="3" width="8" height="8"/><rect x="3" y="13" width="8" height="8"/><rect x="13" y="13" width="8" height="8"/></svg>
+          <span><b>Windows</b><small>Portable EXE · no installer</small></span>
+        </a>
+        <a href="https://github.com/drsamonline/app-poets-studio/releases/download/app-latest/app-poets-studio-linux">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="4" width="19" height="16" rx="2.5"/><path d="M7 10l2.5 2L7 14M12.5 14.5h4.5"/></svg>
+          <span><b>Linux</b><small>Single binary</small></span>
+        </a>
+      </div>
+      <p class="sub" style="margin:0 0 10px">Or open <code>docs/play/index.html</code> from the repository — that
+        file, beside its five siblings, is the whole app.</p>
+      <p class="sub" style="margin:0">On a phone or a desktop browser it also installs itself: a service worker
+        caches the app once, so afterwards it opens with the network off, from an icon, with no
+        server involved. And <code>node scripts/build-single.mjs</code> folds the whole thing into
+        one HTML file you can carry on a stick.</p>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>Poet's Studio — Dr. Sohil Momin</span>
+    <span class="sp"></span>
+    <a href="https://github.com/drsamonline/app-poets-studio">Source</a>
+    <a href="https://github.com/drsamonline/app-poets-studio/blob/main/LICENSE">Licence</a>
+    <a href="https://github.com/drsamonline/app-poets-studio/blob/main/NOTICE.md">Dictionary licence</a>
+    <a href="https://drsamonline.github.io/">All projects</a>
+    <span>landing build 2026-11-01</span>
+  </div>
+</footer>
+
+<script>
+/* Theme. The CSS above sets the first paint from the system preference; this
+   only overrides it, under a key of its own, so the landing page and the app
+   can disagree about the theme without either changing the other. */
+(function () {
+  var KEY = "poets-landing-theme";
+  var root = document.documentElement;
+  var btn = document.getElementById("theme");
+  try { var saved = localStorage.getItem(KEY); if (saved) root.setAttribute("data-theme", saved); } catch (e) {}
+  function current() {
+    var t = root.getAttribute("data-theme");
+    if (t) return t;
+    return (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) ? "dark" : "light";
+  }
+  function label() { btn.textContent = current() === "dark" ? "Light" : "Dark"; }
+  btn.addEventListener("click", function () {
+    var next = current() === "dark" ? "light" : "dark";
+    root.setAttribute("data-theme", next);
+    try { localStorage.setItem(KEY, next); } catch (e) {}
+    label();
+  });
+  label();
+})();
+
+/* The demo is the app, not a picture of it. The poster sits behind the frame and
+   is covered only once the frame has loaded, so a blocked frame still shows the
+   product instead of an empty rectangle. */
+(function () {
+  var shell = document.getElementById("shell");
+  var frame = document.getElementById("frame");
+  var pending = "sonnet";
+
+  function send(slug) {
+    pending = slug;
+    try { frame.contentWindow.postMessage({ type: "poets-studio:demo", slug: slug }, "*"); } catch (e) {}
+  }
+
+  frame.addEventListener("load", function () {
+    shell.classList.add("live");
+    send(pending);
+  });
+  /* `play/` is served as a directory over HTTP, but a file:// URL with a
+     trailing slash gives Chromium a generated index instead of the app. Name
+     the entry file when the page is opened from disk. */
+  frame.src = location.protocol === "file:" ? "play/index.html" : "play/";
+
+  var buttons = Array.prototype.slice.call(document.querySelectorAll("[data-demo]"));
+  buttons.forEach(function (b) {
+    b.addEventListener("click", function () {
+      buttons.forEach(function (x) { x.setAttribute("aria-pressed", x === b ? "true" : "false"); });
+      send(b.getAttribute("data-demo"));
+    });
+  });
+})();
+</script>
 </body>
 </html>

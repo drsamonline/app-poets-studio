@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Poet's Studio — rhyme, metre and fixed forms, fully offline</title>
 <meta name="theme-color" content="#0f1115">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="../icon.svg" type="image/svg+xml">
 <style>
   :root{
     --bg:#0f1115;--card:#171a21;--ink:#e7e9ee;--mut:#9aa3b2;--line:#252a34;--acc:#22c55e;
@@ -40,11 +42,15 @@
   .badge.fail{color:var(--bad);border-color:var(--bad)}
   .badge.warn{color:var(--warn);border-color:var(--warn)}
   .measure{margin-top:12px;border-top:1px solid var(--line);padding-top:10px}
-  .row{display:grid;grid-template-columns:26px 34px 1fr;gap:8px;align-items:center;
-    padding:3px 0;font-size:13px;border-radius:6px}
+  .row{display:grid;grid-template-columns:24px 30px 1fr 16px;gap:8px;align-items:center;
+    padding:3px 4px;font-size:13px;border-radius:6px;cursor:pointer}
+  .row:hover{background:rgba(127,127,127,.08)}
+  .row:focus-visible{outline:2px solid var(--acc);outline-offset:1px}
   .row.bad{background:rgba(239,68,68,.09)}
+  .row.focus{box-shadow:inset 2px 0 0 var(--acc)}
   .row .n{color:var(--mut);text-align:right;font-variant-numeric:tabular-nums}
   .row .syl{color:var(--mut);text-align:right;font-variant-numeric:tabular-nums}
+  .row .rh{color:var(--acc);text-align:center;font-variant-numeric:tabular-nums;opacity:.9}
   .pat{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:2px;font-size:13px}
   .pat i{font-style:normal;color:var(--mut);opacity:.45}
   .pat b{font-weight:400;color:var(--acc)}
@@ -64,13 +70,53 @@
   .field{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
   .field label{font-size:12px;color:var(--mut)}
   .drafts{list-style:none;padding:0;margin:0;font-size:14px}
-  .drafts li{display:flex;gap:8px;align-items:center;padding:7px 0;border-top:1px solid var(--line)}
+  .drafts li{display:flex;gap:6px;align-items:center;padding:7px 0;border-top:1px solid var(--line)}
   .drafts li:first-child{border-top:0}
   .drafts .t{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .drafts .m{color:var(--mut);font-size:12px}
+  .drafts button{font-size:12px;padding:4px 8px}
   footer{margin-top:18px;border-top:1px solid var(--line);padding-top:10px}
   .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
   .form-note{font-size:12px;color:var(--mut);margin:0 0 8px}
+  /* Light is a real palette, not a filter. web-kit sets --bg/--card/--ink/--mut/
+     --line/--acc on :root when the theme changes; these are the three colours
+     it does not own, and the two places where a dark-only tint would vanish. */
+  html[data-theme="light"]{--warn:#a16207;--bad:#b91c1c;--good:#15803d}
+  html[data-theme="light"] .issues li.fail{color:#b91c1c}
+  html[data-theme="light"] .issues li.warn{color:#a16207}
+  html[data-theme="light"] .row.bad{background:rgba(185,28,28,.07)}
+  html[data-theme="light"] textarea#poem::placeholder{color:#8b929e}
+  .build{opacity:.75}
+
+  /* dialogs: prompt(), confirm() and alert() are suppressed inside the WebView
+     shell the APK ships in, so nothing in the app may depend on them. */
+  dialog{border:1px solid var(--line);border-radius:14px;background:var(--card);color:var(--ink);
+    padding:18px;max-width:460px;width:calc(100% - 36px);font:inherit}
+  dialog::backdrop{background:rgba(0,0,0,.5)}
+  dialog h2{font-size:15px;margin:0 0 6px;text-transform:none;letter-spacing:0}
+  dialog label{display:block;font-size:12px;color:var(--mut);margin:12px 0 4px}
+  dialog input,dialog textarea{width:100%;font-size:14px}
+  dialog .field{justify-content:flex-end;margin-top:16px}
+  .diff{margin-top:12px;border-top:1px solid var(--line);padding-top:10px;font-size:12.5px}
+  .diff h3{font-size:12px;text-transform:uppercase;letter-spacing:.09em;color:var(--mut);margin:0 0 8px}
+  .diff pre{margin:0;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;white-space:pre-wrap;
+    max-height:260px;overflow:auto;line-height:1.5}
+  .diff .add{color:var(--good)}
+  .diff .del{color:var(--bad);opacity:.8}
+  .undo{color:var(--mut);font-size:12.5px;display:flex;gap:8px;align-items:center;padding:0 0 8px}
+
+  /* print: the poem and its measure, nothing else */
+  @media print{
+    :root{--bg:#fff;--card:#fff;--ink:#111;--mut:#555;--line:#ccc;--acc:#111;
+          --warn:#6b4b00;--bad:#8a1010;--good:#0b5c2b}
+    header,footer,.tabs,#pane-rhyme,.bar button,#savestate,.undo,.diff,#issues,.row .rh{display:none}
+    body{background:#fff}
+    .grid{display:block}
+    .card{border:0;padding:0;margin-bottom:18px}
+    textarea#poem{min-height:0;height:auto;font-size:12pt;line-height:1.7}
+    .measure{border-top:1px solid #ccc}
+    .row{cursor:auto}
+  }
 </style>
 </head>
 <body>
@@ -80,15 +126,17 @@
     <span class="mut small">rhyme · metre · fixed forms — offline, no accounts</span>
     <span class="spacer"></span>
     <select id="form" aria-label="Form"></select>
+    <button id="words" class="ghost" title="Teach it a word it does not know">My words</button>
     <button id="theme" class="ghost" title="Switch light and dark">Theme</button>
   </header>
 
   <div class="grid">
     <section class="card">
       <div class="bar">
-        <span class="badge" id="verdict">—</span>
+        <span class="badge" id="verdict" role="status" aria-live="polite">—</span>
         <span class="mut small" id="formnote"></span>
         <span class="spacer"></span>
+        <span class="mut small" id="savestate"></span>
         <button id="save" class="primary">Save draft</button>
       </div>
       <label class="sr" for="poem">Your poem</label>
@@ -119,56 +167,116 @@
           <input id="title" placeholder="draft title" style="flex:1;min-width:120px">
           <button id="savenew" class="primary">Save</button>
         </div>
+        <div id="undo"></div>
         <ul class="drafts" id="drafts"></ul>
         <div class="field" style="margin-top:10px">
           <button id="export-all" class="ghost">Export journal (JSON)</button>
+          <button id="import-all" class="ghost">Import journal</button>
+          <input id="import-file" type="file" accept="application/json,.json" hidden>
           <button id="export-zip" class="ghost">Download all drafts (ZIP)</button>
         </div>
+        <div class="diff" id="diff" hidden></div>
       </div>
     </section>
   </div>
 
   <footer class="mut small">
     <span id="dictinfo">loading dictionary…</span> ·
-    everything stays on this device · PolyForm Noncommercial 1.0.0 © 2026 Dr Sohil Momin
+    everything stays on this device · PolyForm Noncommercial 1.0.0 © 2026 Dr Sohil Momin ·
+    <span class="build">build 2026-11-01</span>
   </footer>
 </div>
+
+<dialog id="dlg">
+  <form method="dialog" id="dlgform">
+    <h2 id="dlgtitle">—</h2>
+    <div id="dlgbody"></div>
+    <div class="field">
+      <button value="cancel" class="ghost">Cancel</button>
+      <button value="ok" class="primary" id="dlgok">OK</button>
+    </div>
+  </form>
+</dialog>
 
 <script src="web-kit.js"></script>
 <script src="export-kit.js"></script>
 <script src="poetry.js"></script>
 <script src="dict.js"></script>
+<script src="samples.js"></script>
 <script>
 (function () {
   "use strict";
   var $ = function (id) { return document.getElementById(id); };
-  var DICT = Poetry.parseDict(CMUDICT_SUBSET);
-  $("dictinfo").textContent = DICT.size.toLocaleString() + " words in the pronouncing dictionary";
+
+  function esc(s) {
+    return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
+      return ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c];
+    });
+  }
 
   if (window.Loom) { Loom.theme.apply(); Loom.seo.title("Poet's Studio"); }
 
+  /* The service worker is what makes the app offline BEFORE it loads, not just
+     after. It is registered only over http(s) — from file:// there is nothing to
+     register, and the app already works. A new worker is asked for on every
+     load, so a release is never hidden behind a stale cache. */
+  if ("serviceWorker" in navigator && /^https?:$/.test(location.protocol) &&
+      document.querySelector('link[rel="manifest"]')) {
+    navigator.serviceWorker.register("sw.js").then(function (reg) {
+      if (reg && reg.update) reg.update();
+    }).catch(function () { /* an offline-first app that cannot install a worker still runs */ });
+  }
+
+  /* ---------------- the dictionary, plus the words you taught it ---------------- */
+  /* "My words" is appended to the dictionary text before it is parsed, so a
+     name or a dialect form is measured exactly like any other word — no second
+     code path, and nothing leaves the device. */
+  var MY_WORDS = "mywords";
+  function myWordsText() { return (window.Loom && Loom.storage.get(MY_WORDS, "")) || ""; }
+
+  var DICT = null;
+  function loadDict() {
+    var extra = myWordsText().trim();
+    DICT = Poetry.parseDict(CMUDICT_SUBSET + (extra ? "\n" + extra : ""));
+    $("dictinfo").textContent = DICT.size.toLocaleString() + " words in the pronouncing dictionary";
+    if (window.PoetsStudio) window.PoetsStudio.dict = DICT;
+  }
+  loadDict();
+
   /* ---------------- form picker ---------------- */
   var formSel = $("form");
-  ["free", "haiku", "sonnet", "ghazal", "custom"].forEach(function (id) {
+  var FORM_ORDER = Object.keys(Poetry.FORMS);
+  FORM_ORDER.forEach(function (id) {
     var o = document.createElement("option");
     o.value = id; o.textContent = Poetry.FORMS[id].name;
     formSel.appendChild(o);
   });
   var custom = { syllables: [], scheme: "" };
-  var saved = Loom ? Loom.storage.get("form", "sonnet") : "sonnet";
-  formSel.value = saved || "sonnet";
+  var savedForm = window.Loom ? Loom.storage.get("form", "sonnet") : "sonnet";
+  formSel.value = Poetry.FORMS[savedForm] ? savedForm : "sonnet";
+
+  /* ---------------- dialogs, instead of prompt/confirm/alert ---------------- */
+  var dlg = $("dlg"), dlgForm = $("dlgform");
+  function ask(opts) {
+    $("dlgtitle").textContent = opts.title || "";
+    $("dlgbody").innerHTML = opts.body || "";
+    $("dlgok").textContent = opts.ok || "OK";
+    dlg.returnValue = "";
+    var done = function () {
+      dlg.removeEventListener("close", done);
+      if (dlg.returnValue === "ok" && opts.onOk) opts.onOk();
+    };
+    dlg.addEventListener("close", done);
+    dlg.showModal();
+  }
 
   /* ---------------- the measure ---------------- */
   var poem = $("poem");
-  var lastCheck = null;
+  var focusLine = 0;
 
-  function renderPattern(pat, ideal) {
+  function renderPattern(pat) {
     var out = "";
-    for (var i = 0; i < pat.length; i++) {
-      var ch = pat.charAt(i);
-      if (ch === "1") out += "<b>—</b>";
-      else out += "<i>·</i>";
-    }
+    for (var i = 0; i < pat.length; i++) out += pat.charAt(i) === "1" ? "<b>—</b>" : "<i>·</i>";
     return out;
   }
 
@@ -177,19 +285,24 @@
     var formId = formSel.value;
     var opts = formId === "custom" ? custom : {};
     var r = Poetry.check(formId, text, DICT, opts);
-    lastCheck = r;
+    // The scheme as it is being written, lettered in order of first appearance:
+    // the writer sees the rhyme they are actually making, not the one they meant.
+    var sch = Poetry.schemeOf(text, DICT, opts);
 
     $("formnote").textContent = r.form.note || "";
 
     var rows = "";
-    r.lines.forEach(function (l) {
-      var bad = r.issues.some(function (i) { return i.line === l.n && i.level === "fail"; });
-      rows += '<div class="row' + (bad ? " bad" : "") + '">' +
+    r.lines.forEach(function (l, i) {
+      var bad = r.issues.some(function (x) { return x.line === l.n && x.level === "fail"; });
+      rows += '<div class="row' + (bad ? " bad" : "") + (focusLine === l.n ? " focus" : "") +
+        '" data-line="' + l.n + '" tabindex="0" role="button"' +
+        ' title="Line ' + l.n + ' — click for its notes">' +
         '<span class="n">' + l.n + '</span>' +
         '<span class="syl">' + l.syllables + '</span>' +
         '<span><span class="pat">' + renderPattern(l.pattern) + '</span>' +
         '<span class="metre">' + (l.metre ? l.metre.name : "") +
-        (l.unknown.length ? ' · ?' + l.unknown.join(", ") : "") + '</span></span>' +
+        (l.unknown.length ? ' · ?' + esc(l.unknown.join(", ")) : "") + '</span></span>' +
+        '<span class="rh" title="rhyme ' + (sch.letters[i] || "·") + '">' + (sch.letters[i] || "·") + '</span>' +
         '</div>';
     });
     $("measure").innerHTML = rows || '<span class="mut small">No lines yet.</span>';
@@ -199,11 +312,38 @@
     else if (r.pass) { v.className = "badge pass"; v.textContent = "Passes " + r.form.name; }
     else { v.className = "badge fail"; v.textContent = r.failed + " issue" + (r.failed === 1 ? "" : "s"); }
 
-    var iss = r.issues.slice(0, 40).map(function (i) {
-      return '<li class="' + i.level + '">' + (i.line ? "line " + i.line + " · " : "") + i.msg + '</li>';
-    }).join("");
-    $("issues").innerHTML = iss;
+    var shown = r.issues;
+    if (focusLine) {
+      shown = r.issues.filter(function (x) { return x.line === focusLine || x.line === 0; });
+    }
+    $("issues").innerHTML = shown.slice(0, 40).map(function (i) {
+      return '<li class="' + i.level + '">' + (i.line ? "line " + i.line + " · " : "") + esc(i.msg) + '</li>';
+    }).join("") + (focusLine ? '<li class="mut">showing line ' + focusLine +
+      ' — <a href="#" id="unfocus">show every line</a></li>' : "");
+
+    var unfocus = $("unfocus");
+    if (unfocus) unfocus.addEventListener("click", function (e) {
+      e.preventDefault(); focusLine = 0; measure();
+    });
   }
+
+  $("measure").addEventListener("click", function (e) {
+    var row = e.target.closest(".row");
+    if (!row) return;
+    var n = +row.getAttribute("data-line");
+    focusLine = focusLine === n ? 0 : n;
+    measure();
+  });
+  $("measure").addEventListener("keydown", function (e) {
+    var row = e.target.closest(".row");
+    if (!row) return;
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      var n = +row.getAttribute("data-line");
+      focusLine = focusLine === n ? 0 : n;
+      measure();
+    }
+  });
 
   var t = null;
   poem.addEventListener("input", function () {
@@ -211,23 +351,46 @@
     t = setTimeout(measure, 120);
   });
   formSel.addEventListener("change", function () {
-    if (Loom) Loom.storage.set("form", formSel.value);
+    if (window.Loom) Loom.storage.set("form", formSel.value);
     if (formSel.value === "custom") askCustom();
     measure();
   });
 
   function askCustom() {
-    var syl = prompt("Syllable count for each line, comma separated (e.g. 8,6,8,6):",
-      custom.syllables.join(",") || "8,6,8,6");
-    if (syl !== null) {
-      custom.syllables = String(syl).split(",").map(function (s) {
-        var n = parseInt(s.trim(), 10); return isNaN(n) ? 0 : n;
-      });
-    }
-    var sch = prompt("Rhyme scheme letters (e.g. ABAB, or leave blank):", custom.scheme || "ABAB");
-    if (sch !== null) custom.scheme = String(sch).toUpperCase();
-    measure();
+    ask({
+      title: "Custom stanza",
+      body: '<label for="c-syl">Syllables for each line, comma separated</label>' +
+        '<input id="c-syl" value="' + esc(custom.syllables.join(",") || "8,6,8,6") + '">' +
+        '<label for="c-sch">Rhyme scheme letters, or blank for none</label>' +
+        '<input id="c-sch" value="' + esc(custom.scheme || "ABAB") + '">',
+      ok: "Use it",
+      onOk: function () {
+        custom.syllables = String($("c-syl").value).split(",").map(function (s) {
+          var n = parseInt(s.trim(), 10); return isNaN(n) ? 0 : n;
+        });
+        custom.scheme = String($("c-sch").value).toUpperCase().replace(/[^A-Z]/g, "");
+        measure();
+      }
+    });
   }
+
+  /* ---------------- my words ---------------- */
+  $("words").addEventListener("click", function () {
+    ask({
+      title: "Words it should know",
+      body: '<p class="form-note">One word a line, with its sounds in ARPAbet. For names, dialect and words the dictionary has never met — ' +
+        'the metre and the rhyme finder treat them like any other word. Example: <code>kolkata K OW1 L K AA1 T AA0</code></p>' +
+        '<textarea id="w-text" rows="7" spellcheck="false" placeholder="kolkata K OW1 L K AA1 T AA0">' +
+        esc(myWordsText()) + '</textarea>',
+      ok: "Teach it",
+      onOk: function () {
+        if (window.Loom) Loom.storage.set(MY_WORDS, $("w-text").value);
+        loadDict();
+        measure();
+        if (wordEl.value.trim()) findRhymes();
+      }
+    });
+  });
 
   /* ---------------- rhyme finder ---------------- */
   var wordEl = $("word"), sylEl = $("syl"), rhymeOut = $("rhyme-out");
@@ -236,7 +399,7 @@
   function rhymeGroup(name, list) {
     if (!list.length) return "";
     var chips = list.slice(0, 120).map(function (r) {
-      return '<span class="chip" data-w="' + r.word + '">' + r.word +
+      return '<span class="chip" data-w="' + esc(r.word) + '">' + esc(r.word) +
         '<span class="s">' + r.syllables + '</span></span>';
     }).join("");
     return '<div class="small mut" style="margin:10px 0 2px">' + name +
@@ -250,13 +413,14 @@
     var n = parseInt(sylEl.value, 10);
     var r = Poetry.rhymes(w, DICT, isNaN(n) ? {} : { syllables: n });
     if (!r.known) {
-      $("rhyme-note").textContent = "\u201c" + w + "\u201d is not in the dictionary, so it cannot be sounded.";
+      $("rhyme-note").textContent = "\u201c" + w + "\u201d is not in the dictionary, so it cannot be sounded. " +
+        "Add it under \u201cMy words\u201d if you know how it sounds.";
       rhymeOut.innerHTML = ""; return;
     }
-    var nSyl = Poetry.syllables(Poetry.lookup(w, DICT));
+    var phones = Poetry.lookup(w, DICT);
+    var nSyl = Poetry.syllables(phones);
     $("rhyme-note").textContent = "\u201c" + w + "\u201d — " + nSyl +
-      (nSyl === 1 ? " syllable · " : " syllables · ") +
-      Poetry.lookup(w, DICT).join(" ");
+      (nSyl === 1 ? " syllable · " : " syllables · ") + phones.join(" ");
     rhymeOut.innerHTML =
       rhymeGroup("Perfect", r.perfect) +
       rhymeGroup("Near", r.near) +
@@ -276,27 +440,34 @@
   });
 
   /* ---------------- journal ---------------- */
-  var drafts = (Loom && Loom.storage.get("drafts", [])) || [];
+  var drafts = (window.Loom && Loom.storage.get("drafts", [])) || [];
+  var lastDeleted = null;
 
-  function persist() { if (Loom) Loom.storage.set("drafts", drafts); }
+  function persist() { if (window.Loom) Loom.storage.set("drafts", drafts); }
 
   function renderDrafts() {
     var ul = $("drafts");
+    $("undo").innerHTML = lastDeleted
+      ? '<div class="undo">Deleted \u201c' + esc(lastDeleted.draft.title) + '\u201d and ' +
+        lastDeleted.draft.versions.length + ' version(s). <button class="ghost" data-act="undo">Undo</button></div>'
+      : "";
     if (!drafts.length) { ul.innerHTML = '<li class="mut small">No drafts yet.</li>'; return; }
     ul.innerHTML = drafts.map(function (d) {
       return '<li data-id="' + d.id + '">' +
         '<span class="t">' + esc(d.title) + ' <span class="m">' + d.versions.length +
         ' version' + (d.versions.length === 1 ? "" : "s") + ' · ' + esc(d.form) + '</span></span>' +
         '<button class="ghost" data-act="load">Open</button>' +
+        (d.versions.length > 1 ? '<button class="ghost" data-act="diff">Diff</button>' : '') +
+        '<button class="ghost" data-act="rename">Rename</button>' +
+        '<button class="ghost" data-act="dupe">Copy</button>' +
         '<button class="ghost" data-act="drop" title="Delete">×</button>' +
         '</li>';
     }).join("");
   }
 
-  function esc(s) {
-    return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
-      return ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c];
-    });
+  function draftById(id) {
+    for (var i = 0; i < drafts.length; i++) if (drafts[i].id === id) return drafts[i];
+    return null;
   }
 
   function saveDraft() {
@@ -318,7 +489,8 @@
       });
     }
     persist(); renderDrafts();
-    if (Loom && Loom.a11y) Loom.a11y.announce("Saved \u201c" + title + "\u201d");
+    $("savestate").textContent = "saved " + new Date().toLocaleTimeString();
+    if (window.Loom && Loom.a11y) Loom.a11y.announce("Saved \u201c" + title + "\u201d");
   }
 
   function firstLine(text) {
@@ -333,26 +505,110 @@
     var btn = e.target.closest("button");
     if (!btn) return;
     var li = e.target.closest("li"), id = li && li.getAttribute("data-id");
-    var d = null;
-    for (var i = 0; i < drafts.length; i++) if (drafts[i].id === id) d = drafts[i];
+    var d = draftById(id);
     if (!d) return;
-    if (btn.getAttribute("data-act") === "load") {
+    var act = btn.getAttribute("data-act");
+
+    if (act === "load") {
       var v = d.versions[d.versions.length - 1];
       poem.value = v.text;
       $("title").value = d.title;
       if (d.form && Poetry.FORMS[d.form]) formSel.value = d.form;
       measure();
       showTab("rhyme");
-    } else {
-      if (!confirm("Delete \u201c" + d.title + "\u201d and its " + d.versions.length + " version(s)?")) return;
-      drafts = drafts.filter(function (x) { return x.id !== id; });
+    } else if (act === "diff") {
+      showDiff(d);
+    } else if (act === "rename") {
+      ask({
+        title: "Rename draft",
+        body: '<label for="r-title">Title</label><input id="r-title" value="' + esc(d.title) + '">',
+        ok: "Rename",
+        onOk: function () {
+          var next = $("r-title").value.trim();
+          if (!next) return;
+          d.title = next;
+          persist(); renderDrafts();
+        }
+      });
+    } else if (act === "dupe") {
+      var last = d.versions[d.versions.length - 1];
+      drafts.unshift({
+        id: "d" + Date.now(),
+        title: d.title + " (copy)",
+        form: d.form,
+        versions: [{ at: new Date().toISOString(), text: last.text, form: d.form }]
+      });
       persist(); renderDrafts();
+    } else if (act === "drop") {
+      ask({
+        title: "Delete this draft?",
+        body: '<p class="form-note">\u201c' + esc(d.title) + '\u201d and its ' + d.versions.length +
+          ' version(s) will go. It can be undone once, from the journal.</p>',
+        ok: "Delete",
+        onOk: function () {
+          lastDeleted = { draft: d, at: drafts.indexOf(d) };
+          drafts = drafts.filter(function (x) { return x.id !== d.id; });
+          persist(); renderDrafts();
+          $("diff").hidden = true;
+        }
+      });
     }
   });
 
+  $("undo").addEventListener("click", function (e) {
+    if (!e.target.closest("button")) return;
+    if (!lastDeleted) return;
+    drafts.splice(Math.max(0, lastDeleted.at), 0, lastDeleted.draft);
+    lastDeleted = null;
+    persist(); renderDrafts();
+  });
+
+  /* a line diff, so "3 versions" says what changed */
+  function lineDiff(a, b) {
+    var A = String(a).split("\n"), B = String(b).split("\n");
+    var m = A.length, n = B.length;
+    var L = [], i, j;
+    for (i = 0; i <= m; i++) { L[i] = []; for (j = 0; j <= n; j++) L[i][j] = 0; }
+    for (i = m - 1; i >= 0; i--) {
+      for (j = n - 1; j >= 0; j--) {
+        L[i][j] = A[i] === B[j] ? L[i + 1][j + 1] + 1 : Math.max(L[i + 1][j], L[i][j + 1]);
+      }
+    }
+    var out = [];
+    i = 0; j = 0;
+    while (i < m && j < n) {
+      if (A[i] === B[j]) { out.push({ t: " ", s: A[i] }); i++; j++; }
+      else if (L[i + 1][j] >= L[i][j + 1]) { out.push({ t: "-", s: A[i] }); i++; }
+      else { out.push({ t: "+", s: B[j] }); j++; }
+    }
+    while (i < m) { out.push({ t: "-", s: A[i] }); i++; }
+    while (j < n) { out.push({ t: "+", s: B[j] }); j++; }
+    return out;
+  }
+
+  function showDiff(d) {
+    var box = $("diff");
+    var prev = d.versions[d.versions.length - 2];
+    var last = d.versions[d.versions.length - 1];
+    if (!prev) { box.hidden = true; return; }
+    var rows = lineDiff(prev.text, last.text).map(function (r) {
+      var cls = r.t === "+" ? "add" : r.t === "-" ? "del" : "";
+      return '<span class="' + cls + '">' + (r.t === " " ? "\u00a0\u00a0" : r.t + " ") +
+        esc(r.s) + "</span>";
+    }).join("\n");
+    box.innerHTML = '<h3>\u201c' + esc(d.title) + '\u201d — what changed</h3>' +
+      '<pre>' + rows + '</pre>' +
+      '<p class="form-note" style="margin:8px 0 0">' + new Date(prev.at).toLocaleString() +
+      ' \u2192 ' + new Date(last.at).toLocaleString() + '</p>';
+    box.hidden = false;
+  }
+
+  /* ---------------- export and import ---------------- */
   $("export-all").addEventListener("click", function () {
     if (!window.Export) return;
-    Export.json("poets-studio-journal.json", { app: "Poet's Studio", exported: new Date().toISOString(), drafts: drafts });
+    Export.json("poets-studio-journal.json", {
+      app: "Poet's Studio", version: 2, exported: new Date().toISOString(), drafts: drafts
+    });
   });
 
   $("export-zip").addEventListener("click", function () {
@@ -363,8 +619,37 @@
       }).join("\n\n");
       return { name: safeName(d.title) + ".txt", data: body };
     });
-    if (!files.length) { alert("Nothing to export yet."); return; }
+    if (!files.length) { $("savestate").textContent = "nothing to export yet"; return; }
     Export.saveZip("poets-studio-drafts.zip", files);
+  });
+
+  $("import-all").addEventListener("click", function () { $("import-file").click(); });
+
+  $("import-file").addEventListener("change", function (e) {
+    var file = e.target.files && e.target.files[0];
+    if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function () {
+      var data = null;
+      try { data = JSON.parse(String(reader.result)); } catch (err) { data = null; }
+      var incoming = data && data.drafts;
+      if (!incoming || !incoming.length) {
+        $("savestate").textContent = "that file has no drafts in it";
+        return;
+      }
+      var have = {};
+      drafts.forEach(function (d) { have[d.id] = true; });
+      var added = 0;
+      incoming.forEach(function (d) {
+        if (!d || !d.versions || !d.versions.length) return;
+        if (have[d.id]) d.id = "d" + Date.now() + Math.floor(Math.random() * 1000);
+        drafts.push(d); added++;
+      });
+      persist(); renderDrafts();
+      $("savestate").textContent = "imported " + added + " draft" + (added === 1 ? "" : "s");
+    };
+    reader.readAsText(file);
+    e.target.value = "";
   });
 
   function safeName(s) {
@@ -386,18 +671,85 @@
     if (window.Loom) Loom.theme.toggle();
   });
 
-  /* ---------------- start ---------------- */
-  var starter = Loom ? Loom.storage.get("last", "") : "";
-  poem.value = starter || "";
-  renderDrafts();
-  measure();
-
-  // remember the last thing typed, so a refresh is not a loss
-  poem.addEventListener("input", function () {
-    if (Loom) Loom.storage.set("last", poem.value);
+  /* ---------------- keyboard ---------------- */
+  document.addEventListener("keydown", function (e) {
+    if (dlg.open) return;
+    var mod = e.ctrlKey || e.metaKey;
+    if (mod && String(e.key).toLowerCase() === "s") { e.preventDefault(); saveDraft(); return; }
+    if (e.altKey && String(e.key).toLowerCase() === "r") {
+      e.preventDefault(); showTab("rhyme"); wordEl.focus(); wordEl.select(); return;
+    }
+    if (e.altKey && /^[1-9]$/.test(e.key)) {
+      var id = FORM_ORDER[parseInt(e.key, 10) - 1];
+      if (!id) return;
+      e.preventDefault();
+      formSel.value = id;
+      if (window.Loom) Loom.storage.set("form", id);
+      if (id === "custom") askCustom();
+      measure();
+    }
   });
 
-  window.PoetsStudio = { dict: DICT, measure: measure, rhymes: findRhymes, drafts: function () { return drafts; } };
+  /* ---------------- samples, and links into a view ---------------- */
+  /* The samples live in samples.js, so the tests can check that each one is
+     measured the way this page claims it is. `haiku-off` is deliberately
+     wrong: the point of the app is that it says so. */
+  var EXAMPLES = window.POEM_SAMPLES || {};
+
+  function applyDemo(slug) {
+    if (!slug) return false;
+    var ex = EXAMPLES[slug];
+    if (ex) {
+      poem.value = ex.text;
+      if (Poetry.FORMS[ex.form]) formSel.value = ex.form;
+      $("title").value = ex.title;
+      focusLine = 0;
+      showTab("rhyme");
+      measure();
+      return true;
+    }
+    if (slug.indexOf("rhyme:") === 0) {
+      wordEl.value = slug.slice(6);
+      showTab("rhyme");
+      findRhymes();
+      return true;
+    }
+    return false;
+  }
+
+  /* #/sonnet, #/haiku, #/haiku-off, #/ghazal, #/rhyme/though */
+  function fromHash() {
+    var h = String(location.hash || "").replace(/^#\/?/, "");
+    if (!h) return null;
+    var parts = h.split("/");
+    return parts[0] === "rhyme" ? "rhyme:" + decodeURIComponent(parts[1] || "") : parts[0];
+  }
+  window.addEventListener("hashchange", function () { applyDemo(fromHash()); });
+
+  /* The landing page drives this frame from outside, so switching sample does
+     not reload 124,085 words. Same-origin is not assumed: any parent may send it. */
+  window.addEventListener("message", function (e) {
+    var d = e.data;
+    if (d && d.type === "poets-studio:demo") applyDemo(String(d.slug || ""));
+  });
+
+  /* ---------------- start ---------------- */
+  var starter = window.Loom ? Loom.storage.get("last", "") : "";
+  poem.value = starter || "";
+  renderDrafts();
+  applyDemo(fromHash());
+  measure();
+
+  // remember the last thing typed, so a refresh is not a loss — and say so
+  poem.addEventListener("input", function () {
+    if (window.Loom) Loom.storage.set("last", poem.value);
+    $("savestate").textContent = "kept on this device";
+  });
+
+  window.PoetsStudio = {
+    dict: DICT, measure: measure, rhymes: findRhymes,
+    drafts: function () { return drafts; }, forms: FORM_ORDER
+  };
 })();
 </script>
 <style id="app-theme">
@@ -414,7 +766,12 @@
   button,.btn{border-radius:10px !important}
   input,textarea,select{border-radius:8px !important}
   .card,[class*="card"]{border-radius:12px !important}
-  button:not(.ghost):not(.tab){background:var(--acc) !important}
+  /* the filled button needs light type on this accent, not the dark green web-kit assumes */
+  button.primary{color:#fff !important}
+  /* a tab is a tab, not a filled button: filling it hid its own label */
+  button:not(.ghost):not(.tab):not([role="tab"]){background:var(--acc) !important}
+  .tabs button{background:transparent !important;border-color:var(--line) !important}
+  .tabs button[aria-selected="true"]{background:var(--bg) !important;border-color:var(--acc) !important}
 </style>
 </body>
 </html>

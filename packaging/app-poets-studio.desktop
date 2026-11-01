@@ -1,0 +1,13 @@
+[Desktop Entry]
+Type=Application
+Name=Poet's Studio
+GenericName=Poetry workshop
+Comment=Rhyme, metre and fixed forms — an offline workshop that measures the poem you wrote
+Exec=app-poets-studio %f
+TryExec=app-poets-studio
+Icon=app-poets-studio
+Terminal=false
+Categories=Education;Office;Literature;
+Keywords=poetry;rhyme;metre;meter;sonnet;haiku;ghazal;
+MimeType=text/plain;
+StartupWMClass=poets-studio

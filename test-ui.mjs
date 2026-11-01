@@ -2,7 +2,7 @@
 /* test-ui.mjs — does the app actually BOOT?
  *
  * test-node.js proves the engine. This proves the page: that index.html loads
- * its five scripts, parses the 124,085-word dictionary, measures a sonnet,
+ * its six scripts, parses the 124,085-word dictionary, measures a sonnet,
  * finds a rhyme and saves a draft — in a real DOM, not in a stub.
  *
  * It needs jsdom, which is NOT a dependency of the app (the app has none, and
@@ -56,7 +56,7 @@ const d = w.document;
 
 let bootError = null;
 try {
-  for (const f of ["web-kit.js", "export-kit.js", "poetry.js", "dict.js"]) {
+  for (const f of ["web-kit.js", "export-kit.js", "poetry.js", "dict.js", "samples.js"]) {
     const s = d.createElement("script");
     s.textContent = fs.readFileSync(path.join(dir, f), "utf8");
     d.head.appendChild(s);

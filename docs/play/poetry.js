@@ -102,9 +102,30 @@
       .filter(function (w) { return w.length > 0; });
   }
 
+  // Elided and archaic forms. Verse contracts words in ways no dictionary
+  // records — and normalise() keeps the apostrophe, so "dimm'd" never matches
+  // anything. Each entry is the pronunciation the contraction actually has
+  // ("dimm'd" is one syllable, not two), so a real sonnet is not marked
+  // inexact for its apostrophes. This is the only hand-written pronunciation
+  // data in the engine; the rest comes from the bundled dictionary.
+  var ELIDED = {
+    "dimm'd": "D IH1 M D", "untrimm'd": "AH2 N T R IH1 M D", "trimm'd": "T R IH1 M D",
+    "ow'st": "OW1 S T", "grow'st": "G R OW1 S T", "know'st": "N OW1 S T",
+    "wander'st": "W AA1 N D ER0 S T", "giv'st": "G IH1 V S T", "do'st": "D UW1 S T",
+    "ne'er": "N EH1 R", "e'er": "EH1 R", "o'er": "AO1 R",
+    "'tis": "T IH1 Z", "'twas": "T W AA1 Z", "'gainst": "G EH1 N S T",
+    "'twixt": "T W IH1 K S T", "'bove": "B AH1 V", "'fore": "F AO1 R",
+    "heav'n": "HH EH1 V AH0 N", "sev'n": "S EH1 V AH0 N", "giv'n": "G IH1 V AH0 N",
+    "bless'd": "B L EH1 S T", "fix'd": "F IH1 K S T", "look'd": "L UH1 K T",
+    "lov'd": "L AH1 V D", "call'd": "K AO1 L D", "turn'd": "T ER1 N D",
+    "stopp'd": "S T AA1 P T", "drown'd": "D R AW1 N D", "shew'd": "SH OW1 D"
+  };
+
   function lookup(word, dict) {
     var w = normalise(word);
-    return (dict && dict.words && dict.words[w]) || null;
+    var p = (dict && dict.words && dict.words[w]) || ELIDED[w];
+    if (!p) return null;
+    return typeof p === "string" ? p.split(/\s+/) : p;
   }
 
   /* ------------------------------------------------------------------ */
@@ -310,11 +331,25 @@
 
   var FORMS = {
     free: { id: "free", name: "Free verse", note: "measured, not constrained" },
+
     haiku: {
       id: "haiku", name: "Haiku",
-      note: "three lines, 5 · 7 · 5 syllables, no rhyme",
+      note: "three lines, 5 \u00b7 7 \u00b7 5 syllables, no rhyme",
       syllablePattern: [5, 7, 5]
     },
+    tanka: {
+      id: "tanka", name: "Tanka",
+      note: "five lines, 5 \u00b7 7 \u00b7 5 \u00b7 7 \u00b7 7 syllables, no rhyme",
+      syllablePattern: [5, 7, 5, 7, 7]
+    },
+    limerick: {
+      id: "limerick", name: "Limerick",
+      note: "five lines, 8 \u00b7 8 \u00b7 5 \u00b7 5 \u00b7 8, AABBA \u2014 a guide, because a limerick is sung",
+      syllablePattern: [8, 8, 5, 5, 8],
+      syllableSlack: 1,
+      scheme: "AABBA"
+    },
+
     sonnet: {
       id: "sonnet", name: "Shakespearean sonnet",
       note: "14 lines of iambic pentameter, ABAB CDCD EFEF GG",
@@ -326,8 +361,24 @@
       // per SYLLABLE against the ideal pattern, with a small allowance, rather
       // than demanding every foot be perfect — which no real sonnet is.
       tolerance: 0.2,
-      scheme: "ABAB CDCD EFEF GG".replace(/ /g, "").split("")
+      scheme: "ABABCDCDEFEFGG"
     },
+    blank: {
+      id: "blank", name: "Blank verse",
+      note: "iambic pentameter, unrhymed, any number of lines",
+      syllables: 10, foot: "iamb", tolerance: 0.2
+    },
+    terza: {
+      id: "terza", name: "Terza rima",
+      note: "iambic pentameter, chained ABA BCB CDC \u2026",
+      syllables: 10, foot: "iamb", tolerance: 0.2
+    },
+    rubaiyat: {
+      id: "rubaiyat", name: "Rubaiyat quatrain",
+      note: "four lines of iambic pentameter, AABA",
+      lineCount: 4, syllables: 10, foot: "iamb", tolerance: 0.2, scheme: "AABA"
+    },
+
     ghazal: {
       id: "ghazal", name: "Ghazal",
       note: "couplets; every line ends on the radif, each couplet rhymes on the qafia before it",
@@ -419,39 +470,75 @@
       }
     });
 
-    if (form.id === "haiku") {
-      if (lines.length !== 3) issue(0, "a haiku is three lines; this is " + lines.length);
-      form.syllablePattern.forEach(function (want, i) {
+    // A syllable pattern: one count per line, in order.
+    if (form.syllablePattern) {
+      var slack = form.syllableSlack || 0;
+      var want = form.syllablePattern.length;
+      if (lines.length !== want) {
+        issue(0, "a " + form.name.toLowerCase() + " is " + want + " lines; this is " + lines.length);
+      }
+      form.syllablePattern.forEach(function (n, i) {
         if (!lines[i]) return;
-        if (lines[i].syllables !== want) {
-          issue(i + 1, "line " + (i + 1) + " is " + lines[i].syllables +
-            " syllables; a haiku wants " + want);
+        var got = lines[i].syllables;
+        if (Math.abs(got - n) > slack) {
+          issue(i + 1, "line " + (i + 1) + " is " + got + (got === 1 ? " syllable" : " syllables") +
+            "; a " + form.name.toLowerCase() + " wants " + n +
+            (slack ? " (give or take " + slack + ")" : ""));
         }
       });
     }
 
-    if (form.id === "sonnet") {
-      if (lines.length !== form.lineCount) {
-        issue(0, "a sonnet is " + form.lineCount + " lines; this is " + lines.length);
-      }
+    // A line count, and one syllable count for every line of it.
+    if (form.lineCount && lines.length !== form.lineCount) {
+      issue(0, "a " + form.name.toLowerCase() + " is " + form.lineCount +
+        " lines; this is " + lines.length);
+    }
+
+    if (form.syllables) {
       var foot = footById(form.foot);
+      var tol = form.tolerance || 0.2;
       lines.forEach(function (l) {
         if (l.syllables !== form.syllables) {
           issue(l.n, "line " + l.n + " is " + l.syllables + " syllables; " +
-            "iambic pentameter wants " + form.syllables);
+            "a " + form.name.toLowerCase() + " wants " + form.syllables);
         }
+        if (!foot) return;
         var ideal = "";
         while (ideal.length < l.pattern.length) ideal += foot.mark;
         ideal = ideal.slice(0, l.pattern.length);
-        var off = 0;
-        for (var i = 0; i < l.pattern.length; i++) if (l.pattern.charAt(i) !== ideal.charAt(i)) off++;
-        var allowed = Math.max(1, Math.round(l.pattern.length * form.tolerance));
+        var off = 0, first = -1;
+        for (var i = 0; i < l.pattern.length; i++) {
+          if (l.pattern.charAt(i) !== ideal.charAt(i)) {
+            off++;
+            if (first < 0) first = i;
+          }
+        }
+        var allowed = Math.max(1, Math.round(l.pattern.length * tol));
         if (l.pattern.length && off > allowed) {
-          issue(l.n, "line " + l.n + " leaves iambic pentameter in " + off +
-            " of " + l.pattern.length + " syllables; at most " + allowed + " is allowed");
+          var footNo = Math.floor(first / foot.mark.length) + 1;
+          var wantsStress = ideal.charAt(first) === "1";
+          issue(l.n, "line " + l.n + " leaves " + foot.name + " metre in " + off + " of " +
+            l.pattern.length + " syllables; at most " + allowed + " is allowed. The first " +
+            "departure is foot " + footNo + ", where the beat " +
+            (wantsStress ? "falls on the second syllable and the line stresses the first"
+                         : "falls on the first syllable and the line stresses the second"));
         }
       });
-      checkScheme(form.scheme.join(""), lines, issue);
+    }
+
+    if (form.scheme) checkScheme(form.scheme, lines, issue);
+
+    // Terza rima is a chain, not a scheme: every line rhymes with the one two
+    // before it, and the letters never repeat in a block.
+    if (form.id === "terza" && lines.length >= 3) {
+      for (var ti = 2; ti < lines.length; ti++) {
+        var tt = rhymeType(lines[ti - 2].phones, lines[ti].phones);
+        if (tt !== "perfect") {
+          issue(lines[ti].n, "terza rima chains every third line: line " + lines[ti].n +
+            " must rhyme with line " + lines[ti - 2].n +
+            (tt ? " \u2014 only a " + tt + " rhyme" : ""));
+        }
+      }
     }
 
     if (form.id === "ghazal") {

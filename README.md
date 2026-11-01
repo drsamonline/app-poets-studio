@@ -159,6 +159,7 @@ Keyboard: `Ctrl/Cmd+S` save, `Alt+R` rhyme finder, `Alt+1…9` pick a form.
 | `docs/play/icon.png` | the icon the release builds take: the kit reads it from the app directory |
 | `scripts/` | badges, icons, the dictionary, screenshots, release notes and the single-file build — all local |
 | `packaging/app-poets-studio.desktop` | the Linux launcher entry, with its icon |
+| `docs/play/icon*.png` | the icon the builds take — launcher PNGs, and the adaptive layers Android masks |
 | `changes/`, `VERSION` | the changelog is written with the change, not reconstructed later |
 | `ENHANCEMENTS.md` | what is shipped, what is left, and why the rest is not done |
 

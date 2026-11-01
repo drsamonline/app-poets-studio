@@ -49,7 +49,7 @@ trap 'rm -f "$BODY"' EXIT
   echo '<p align="center"><img src="'"$RAW"'/docs/assets/icon-192.png" width="96" height="96" alt="Poet&#39;s Studio"></p>'
   echo
   echo '<p align="center"><strong>Rhyme, metre and fixed forms &mdash; a workshop that measures the poem you wrote.</strong><br>'
-  echo 'Offline, no accounts, no telemetry, no generator. The whole 124,085-word dictionary is inside the file.</p>'
+  echo 'Offline, no accounts, no telemetry, no generator. The whole 124,926-word dictionary — 133,971 pronunciations — is inside the file.</p>'
   echo
   echo '| Build | File | Size | SHA-256 |'
   echo '|---|---|---|---|'

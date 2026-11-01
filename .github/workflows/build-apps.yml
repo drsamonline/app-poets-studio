@@ -41,6 +41,9 @@ jobs:
       app_name: app-poets-studio
       app_src: docs/play
       deploy_path: docs
+      # Android 8+ masks the launcher icon to the device's shape; this writes the
+      # adaptive layers so the mark fills the mask instead of being letterboxed.
+      adaptive_icon: true
     permissions:
       contents: write
       pages: write

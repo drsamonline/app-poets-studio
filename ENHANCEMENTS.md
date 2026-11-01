@@ -100,11 +100,17 @@ script (see the last section), and one nicety is left on the kit's side.
 
 ---
 
-## What is left, and why
+## What is left
 
-| | Item | Why |
-|---|---|---|
-| — | **Adaptive-icon XML in the APK** | The three layers are committed and the launcher PNGs are generated at every density, but the `mipmap-anydpi-v26` XML that Android reads for a shaped icon is written by `app-builder`'s APK job. That is a kit change, and a kit change reaches every app in the estate — it wants its own review, not a passenger on this one. |
+Nothing. The list is empty.
+
+The last item — the adaptive-icon XML Android reads for a *shaped* icon — needed a kit
+change, because the APK's resource tree belongs to `app-builder`. It landed as an
+**opt-in** input (`adaptive_icon`, default `false`): the step writes into the APK's
+resources, so it is off for every other app in the estate and on only here. The
+generator reads this repo's own `icon-adaptive-foreground.png` and
+`icon-adaptive-background.png`, and would derive both from the plain icon for a repo
+that has only one.
 
 ### Urdu script — dropped by request
 

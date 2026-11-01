@@ -8,7 +8,7 @@
 ![dictionary](docs/assets/badge-dict.svg)
 
 **Rhyme, metre and fixed forms — a workshop that measures what you actually wrote.**
-Offline, no accounts, no telemetry, no generator. The whole 124,085-word pronouncing
+Offline, no accounts, no telemetry, no generator. The whole 124,926-word pronouncing
 dictionary travels inside the app.
 
 [Live app](https://drsamonline.github.io/app-poets-studio/play/) ·
@@ -58,8 +58,9 @@ Master list **#130** · built from `QUEUE/app-poets-studio.md`.
 - **Writing journal** — drafts, versions and notes on the device, kept in
   IndexedDB rather than localStorage so a journal of versions is not up against a
   5 MB ceiling: import a journal as well as export it, diff two versions line by
-  line, rename, copy, and undo a delete. Export one poem, the whole journal as
-  JSON, or every draft as a ZIP.
+  line, rename, copy, and undo a delete. Two tabs on the same journal tell each
+  other when one of them saves, so neither silently reverts the other. Export one
+  poem, the whole journal as JSON, or every draft as a ZIP.
 - **Print** — `Ctrl/Cmd+P` gives the poem and its measure, without the furniture.
 
 ## The three rhyme strengths
@@ -72,13 +73,17 @@ Master list **#130** · built from `QUEUE/app-poets-studio.md`.
 
 ## The dictionary, and its size
 
-`docs/play/dict.js` carries the **CMU Pronouncing Dictionary** — **124,085
-words**, one pronunciation each — inside the app, so rhyme and metre work with
-no network and no model.
+`docs/play/dict.js` carries the **CMU Pronouncing Dictionary** — **124,926
+words** and **133,971 pronunciations** — inside the app, so rhyme and metre work
+with no network and no model. Every pronunciation is kept, not one per word: 8,383
+words have more than one reading, and those are the words a poet notices. `fire`
+measures as one syllable or two, `read` as *reed* or *red*, depending on the line.
 
 It ships in a single-character ARPAbet encoding (each phoneme is one printable
-character at `33 + its index in Poetry.ALPHABET`), which is **1.9 MB of text
-instead of 3.6 MB** and decodes in one pass. The tab that separates the word
+character at `33 + its index in Poetry.ALPHABET`), which is about half the bytes of
+the plain text and decodes in one pass. Extra readings of the same word follow the
+first on the same line, separated by `|`. The derivation is reproducible:
+`python3 scripts/build-dict.py path/to/cmudict.dict`. The tab that separates the word
 from its phonemes is what marks a line as encoded, so a plain `word P1 P2`
 dictionary can still be pasted in by hand — which is exactly how **My words**
 works.
@@ -120,7 +125,7 @@ Open `docs/play/index.html`. That is the whole app — the kits, the samples and
 the dictionary sit next to it, so it works from `file://` and from GitHub Pages.
 
 ```
-node test-node.js             # 132 assertions, no dependencies
+node test-node.js             # 136 assertions, no dependencies
 node test-ui.mjs              # the page in a real DOM (needs jsdom, harness only)
 node scripts/build-single.mjs # one self-contained dist/poets-studio.html
 bash scripts/icons.sh         # the icon set, from docs/icon.svg
@@ -151,7 +156,8 @@ Keyboard: `Ctrl/Cmd+S` save, `Alt+R` rhyme finder, `Alt+1…9` pick a form.
 | `docs/play/sw.js` | the service worker: network-first HTML, cache-first assets |
 | `docs/play/manifest.webmanifest` | install metadata and the icon set |
 | `docs/icon.svg`, `docs/icon-glyph.svg` | the mark, and the mark without its ground |
-| `scripts/` | badges, icons, screenshots, release notes and the single-file build — all local |
+| `docs/play/icon.png` | the icon the release builds take: the kit reads it from the app directory |
+| `scripts/` | badges, icons, the dictionary, screenshots, release notes and the single-file build — all local |
 | `packaging/app-poets-studio.desktop` | the Linux launcher entry, with its icon |
 | `changes/`, `VERSION` | the changelog is written with the change, not reconstructed later |
 | `ENHANCEMENTS.md` | what is shipped, what is left, and why the rest is not done |

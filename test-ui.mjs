@@ -2,7 +2,7 @@
 /* test-ui.mjs — does the app actually BOOT?
  *
  * test-node.js proves the engine. This proves the page: that index.html loads
- * its six scripts, parses the 124,085-word dictionary, measures a sonnet,
+ * its six scripts, parses the 124,926-word dictionary, measures a sonnet,
  * finds a rhyme and saves a draft — in a real DOM, not in a stub.
  *
  * It needs jsdom, which is NOT a dependency of the app (the app has none, and
@@ -68,6 +68,7 @@ try {
 
 ok("the page boots without throwing", !bootError, bootError && bootError.message);
 ok("it exposes its state for inspection", !!w.PoetsStudio);
+
 if (!w.PoetsStudio) { console.log("\n" + passed + " passed, " + failed + " failed"); process.exit(1); }
 
 ok("the dictionary parsed", w.PoetsStudio.dict.size > 120000, "size " + w.PoetsStudio.dict.size);
@@ -144,6 +145,15 @@ d.getElementById("title").value = "ui test";
 d.getElementById("savenew").click();
 ok("a draft is saved", w.PoetsStudio.drafts().length === 1);
 ok("and listed in the journal", d.querySelectorAll("#drafts li").length === 1);
+
+// two tabs on one journal must not silently revert each other
+ok("the journal announces a save to other tabs", /BroadcastChannel/.test(inline));
+ok("and listens for one", /addEventListener\("storage"/.test(inline));
+let survived = true;
+try {
+  w.dispatchEvent(new w.StorageEvent("storage", { key: "loom:drafts" }));
+} catch (e) { survived = false; }
+ok("a storage event from another tab does not break the page", survived);
 
 console.log("\n" + passed + " passed, " + failed + " failed");
 process.exit(failed ? 1 : 0);

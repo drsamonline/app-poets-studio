@@ -334,6 +334,13 @@ section("one word, two readings");
 eq("an ambiguous word can be one syllable", P.analyse("the blessed rain", DICT, 3)[0].syllables, 3);
 eq("or two, when the metre asks", P.analyse("the blessed rain", DICT, 4)[0].syllables, 4);
 eq("a word with two readings offers both", P.variants("record").length, 2);
+
+// and the dictionary itself carries the rest: 8,000-odd words have more than one
+ok("the dictionary keeps every pronunciation it has",
+  Object.keys(DICT.variants).length > 5000, Object.keys(DICT.variants).length + " words");
+eq("read is both R IY1 D and R EH1 D", P.variants("read", DICT).length, 2);
+eq("fire can be one syllable", P.analyse("the fire burns", DICT, 3)[0].syllables, 3);
+eq("or two, when the line needs it", P.analyse("the fire burns", DICT, 4)[0].syllables, 4);
 ok("and an ordinary word offers none", P.variants("rain") === null);
 
 /* ------------------------------------------------------------------ */

@@ -67,14 +67,23 @@
   // "my" — M + AY1 — as the two plain phonemes X and 1).
   // Returns { words: {word: [phones]}, size: n }.
   function parseDict(text) {
-    var words = {}, size = 0;
+    var words = {}, extra = {}, size = 0;
     String(text).split("\n").forEach(function (line) {
       line = line.replace(/\r$/, "");
       if (!line || line.charAt(0) === "#") return;
       var tab = line.indexOf("\t"), w, rest;
       if (tab > 0) {
         w = line.slice(0, tab);
-        words[w] = decodePhones(line.slice(tab + 1));
+        var rest = line.slice(tab + 1);
+        if (rest.indexOf("|") >= 0) {
+          // every pronunciation the dictionary has for this word; the first is
+          // the one a lookup returns, the rest are there for the metre to choose
+          var parts = rest.split("|");
+          words[w] = decodePhones(parts[0]);
+          extra[w] = parts.slice(1).map(function (x) { return decodePhones(x); });
+        } else {
+          words[w] = decodePhones(rest);
+        }
       } else {
         var sp = line.indexOf(" ");
         if (sp < 1) return;
@@ -83,7 +92,7 @@
       }
       size++;
     });
-    return { words: words, size: size };
+    return { words: words, variants: extra, size: size };
   }
 
   // A word is a word in any script. Stripping to A-Z threw away every Devanagari
@@ -167,10 +176,13 @@
     dove: ["D AH1 V", "D OW1 V"]
   };
 
-  function variantsOf(word) {
-    var v = VARIANTS[normalise(word)];
-    if (!v) return null;
-    return v.map(function (x) { return x.split(/\s+/); });
+  function variantsOf(word, dict) {
+    var w = normalise(word);
+    var curated = VARIANTS[w];
+    if (curated) return curated.map(function (x) { return x.split(/\s+/); });
+    var rest = dict && dict.variants && dict.variants[w];
+    if (rest && rest.length && dict.words[w]) return [dict.words[w]].concat(rest);
+    return null;
   }
 
   /* ------------------------------------------------------------------ */
@@ -308,7 +320,7 @@
     var readings = ws.map(function (w) {
       var p = lookup(w, dict);
       if (!p) { unknown.push(w); return null; }
-      return variantsOf(w) || [p];
+      return variantsOf(w, dict) || [p];
     });
     var phones = chooseReading(readings, target);
     var counted = syllables(phones) + unknown.length;

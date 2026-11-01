@@ -14,8 +14,11 @@ It is a data dependency of this app, not of the engine: `poetry.js` reads it and
 nothing else does.
 
 What was done to it: entries that are not plain lowercase English words were
-dropped, one pronunciation per word was kept, and each phoneme was re-encoded as
-a single character. No entry's pronunciation was altered.
+dropped, duplicate pronunciations were collapsed, every distinct pronunciation of
+a word was kept (9,045 extra readings — `read`, `wind` and their kind have two),
+and each phoneme was re-encoded as a single character. No entry's pronunciation
+was altered. The derivation is reproducible: `python3 scripts/build-dict.py
+path/to/cmudict.dict`.
 
 The licence that travels with it:
 

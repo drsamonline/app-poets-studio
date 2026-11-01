@@ -9,7 +9,7 @@ Pages, in the README, and from `file://` with no network at all.
 Every claim below is one the repository can be checked against:
 
     live      docs/play/index.html ships in this repo and on Pages
-    tests     the number `node test-node.js` actually prints (132)
+    tests     the number `node test-node.js` actually prints (136)
     licence   LICENSE, PolyForm Noncommercial 1.0.0
     offline   the app makes no network request (test-node.js asserts it)
     deps      0 runtime dependencies
@@ -31,11 +31,11 @@ SLATE = "#3d4b5c"
 
 BADGES = [
     ("live", "live", "online", MOSS),
-    ("tests", "tests", "132 passing", MOSS),
+    ("tests", "tests", "136 passing", MOSS),
     ("licence", "licence", "PolyForm NC 1.0.0", CYAN),
     ("offline", "offline", "no network", INK),
     ("deps", "deps", "0 runtime", INK),
-    ("dict", "dictionary", "124,085 words", SLATE),
+    ("dict", "dictionary", "124,926 words", SLATE),
 ]
 
 CH = 6.6  # approximate advance width at 11px in a monospace-ish sans

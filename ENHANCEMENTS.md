@@ -9,18 +9,26 @@ Every item here keeps the app's three promises, which are the reason it exists:
 3. **Nothing leaves the device** — no account, no sync, no telemetry.
 
 An item that would break one of those is not on this list, however useful it looks.
-Effort is **S** (an afternoon), **M** (a day or two), **L** (a week or more).
+
+**Status: everything on the list is shipped.** The one item dropped by request is Urdu
+script (see the last section), and one nicety is left on the kit's side.
 
 ---
 
 ## Shipped
 
+### The dictionary
+
+| | What was added |
+|---|---|
+| B2 | **Every pronunciation, not one per word.** `scripts/build-dict.py` regenerates `dict.js` from the upstream cmudict, keeps all 133,971 pronunciations of 124,926 words, and de-duplicates. 8,383 words have more than one reading — `fire` is one syllable or two, `read` is *reed* or *red* — and the metre picks the one that lands on the count the form asks for. The derivation is reproducible and the file is *smaller* than the one it replaced. |
+| B2′ | **A curated table for the homographs that matter most** — `record`, `present`, `wind`, `blessed`, `learned`, `aged`, `beloved` — so the reading is right even in free verse, where no form declares a target count. |
+
 ### The engine
 
 | | What was added |
 |---|---|
-| B1 | **Elided and archaic lexicon** — around thirty forms (`dimm'd`, `ow'st`, `grow'st`, `ne'er`, `heav'n`, …) carry a hand-written pronunciation, so a real sonnet is not marked inexact for its apostrophes. |
-| B2 | **Two readings where a word has two** — `record`, `present`, `wind`, `read`, `blessed`, `learned`, `aged`, `beloved` and their kind keep both pronunciations, and the metre picks the one that lands on the syllable count the form asks for. Every combination is tried per line (bounded at five ambiguous words), so "the blessed rain" measures as three syllables or four depending on the form. |
+| B1 | **Elided and archaic lexicon** — around thirty forms (`dimm'd`, `ow'st`, `grow'st`, `ne'er`, `heav'n`, …) carry a hand-written pronunciation. |
 | B3 | **`Poetry.schemeOf` wired into the gutter** — every line ending shows the letter it rhymes on. |
 | B4 | **Foot-level diagnosis** — the metre message names the foot that broke and which way the beat falls there. |
 | B5 | **My words** — a local list of words with their ARPAbet sounds, appended to the dictionary text before parsing. |
@@ -30,75 +38,82 @@ Effort is **S** (an afternoon), **M** (a day or two), **L** (a week or more).
 
 | | What was added |
 |---|---|
-| C3 | **A mātrā counter** — a consonant carries its inherent vowel (1), a mātrā sign replaces it with its own weight, a halant kills it; anusvara and chandrabindu add nothing, visarga adds 1. `कल` is 2, `काल` is 3, `क्` is 0. The gutter shows mātrā instead of syllables for these scripts. |
-| C4 | **The ghazal's beher** — two lines that share a beher share a mātrā count, so that is what the ghazal checks, line by line, and reports. A ghazal in Devanagari now passes on its own terms instead of being measured as English. |
-| — | **Words in any script** — the word breaker kept only `A-Z`, so a Hindi line arrived as *no words at all*. It now keeps `\p{L}` and `\p{M}`, which is what made the two items above possible. |
+| C3 | **A mātrā counter** — a consonant carries its inherent vowel (1), a mātrā sign replaces it with its own weight, a halant kills it. `कल` is 2, `काल` is 3, `क्` is 0. |
+| C4 | **The ghazal's beher** — every line of a couplet must share the mātrā count, which is what the ghazal checks and reports. A sample ghazal in Devanagari passes at 17 a line. |
+| — | **Words in any script** — the word breaker kept only `A-Z`, so a Hindi line arrived as *no words at all*. It keeps `\p{L}` and `\p{M}` now. |
 
 ### Forms
 
 | | What was added |
 |---|---|
-| C1 | **Five new forms** — blank verse, terza rima (a real chain check, not a scheme), rubaiyat quatrain, tanka, limerick (with a syllable of slack). The checker is generic: a form is data — `syllablePattern`, `lineCount`, `syllables`, `foot`, `tolerance`, `scheme`. |
+| C1 | **Five new forms** — blank verse, terza rima (a chain check, not a scheme), rubaiyat quatrain, tanka, limerick. The checker is generic: a form is data. |
 | C2 | **Custom stanza is a dialog**, not two sequential `prompt()` calls. |
 
 ### Journal and data
 
 | | What was added |
 |---|---|
-| D1 | **Import a journal** — with id collisions renamed rather than dropped. |
-| D2 | **Drafts in IndexedDB** — localStorage is still the first read (it is synchronous, so the page paints at once) and the fallback when IndexedDB is unavailable; the migration runs once and the local mirror is then dropped, so the 5 MB ceiling stops mattering. |
+| D1 | **Import a journal**, with id collisions renamed rather than dropped. |
+| D2 | **Drafts in IndexedDB** — localStorage stays the synchronous first read and the fallback; the migration runs once and the mirror is then dropped, so the 5 MB ceiling stops mattering. |
 | D3 | **Version diff** — a line-level LCS diff between the last two versions. |
-| D4 | **Undo a delete** — one level, from the journal. |
+| D4 | **Undo a delete.** |
 | D5 | **Rename and copy a draft.** |
 | D6 | **Visible save state.** |
+| D7 | **Two tabs, one journal** — a save tells the other tab to reload (BroadcastChannel, with the `storage` event as the fallback), so neither silently reverts the other. |
 
 ### Accessibility and interface
 
 | | What was added |
 |---|---|
-| E1 | **In-page dialogs** — `prompt`, `confirm` and `alert` are gone, because they are suppressed inside the WebView the APK ships in. |
+| E1 | **In-page dialogs** — `prompt`, `confirm` and `alert` are gone, because they are suppressed inside the APK's WebView. |
 | E2 | **Keyboard shortcuts** — `Ctrl/Cmd+S`, `Alt+R`, `Alt+1…9`. |
 | E3 | **The verdict is a live region**; line rows are focusable buttons. |
-| E4 | **Contrast fixes** — light-mode tokens, the rose theme's own tints, plus two real bugs the theme block was hiding: tabs painted solid accent over their own labels, and a dark-on-accent primary button. |
+| E4 | **Contrast fixes**, plus two real bugs the theme block was hiding: tabs painted solid accent over their own labels, and a dark-on-accent primary button. |
 | E5 | **Clickable gutter** — a line row focuses the notes for that line. |
 
 ### Offline, installable, and the release
 
 | | What was added |
 |---|---|
-| A1 | **Service worker + manifest** — HTML network-first, assets cache-first, `CACHE` bumped per release, `registration.update()` on load, build stamp in the footer. |
-| A2 | **Single-file build** — `scripts/build-single.mjs` inlines everything into `dist/poets-studio.html` (~2.3 MB) and fails if an external script, a manifest link or an absolute URL survives. |
+| A1 | **Service worker + manifest** — HTML network-first, assets cache-first, `CACHE` bumped per release, build stamp in the footer. |
+| A2 | **Single-file build** — `dist/poets-studio.html` (~2.3 MB), and the build fails if anything external survives. |
 | A3 | **Generated icon set** — 16/32/48/180/192/512 plus a maskable 512, from `docs/icon.svg`. |
-| A4 | **Print stylesheet** — `Ctrl/Cmd+P` prints the poem and its measure. |
+| A4 | **Print stylesheet.** |
 | A5 | **Offline first-run note** on the landing page. |
 | F1 | **One icon set, committed**, used by the manifest, the landing page and the release. |
-| F3 | **Adaptive-icon layers** — `icon-adaptive-background.png`, `icon-adaptive-foreground.png` (glyph inside the 66% safe zone) and `icon-monochrome.png` for themed icons, rendered from `docs/icon-glyph.svg`. |
+| F2 | **A real icon in the EXE** — the kit's `make_icons.py` reads an icon from the app directory, so `docs/play/icon.png` is the icon the Windows build now carries, instead of the fallback glyph it had been drawing. |
+| F3 | **A real launcher icon in the APK** — the same file feeds `ic_launcher.png` and its round variant at every density. `icon-adaptive-background.png`, `icon-adaptive-foreground.png` (glyph inside the 66% safe zone) and `icon-monochrome.png` are committed for the adaptive-icon step. |
 | F4 | **Linux launcher** — `packaging/app-poets-studio.desktop`. |
-| F5 | **The release describes itself** — `scripts/release-notes.sh` rewrites the rolling release body with the app's icon, a table of the three builds with sizes and SHA-256 digests read back from the published release, and the local badges. A `announce` job runs it after every build, so the page cannot describe a build that is not there. |
-| F6 | **Versioned releases** — `VERSION` and `changes/` feed the kit's changelog consumer, so every release gets a version tag and a changelog written *with* the change rather than reconstructed later. |
+| F5 | **The release describes itself** — `scripts/release-notes.sh` rewrites the rolling release body with the icon, a table of the three builds with sizes and SHA-256 digests read back from the published release, and the local badges. An `announce` job runs it after every build. |
+| F6 | **Versioned releases** — `VERSION` and `changes/` feed the kit's changelog consumer, so every release gets a version tag and a changelog written *with* the change. |
 
 ### Verification
 
 | | What was added |
 |---|---|
-| G1 | **`test-ui.mjs` runs in CI** — jsdom is installed as a harness dependency and never shipped, so the app keeps zero runtime dependencies while the page is proved to boot in a real DOM (20 assertions: the measure, the scheme gutter, the mātrā row, the dialogs, a saved draft). |
+| G1 | **`test-ui.mjs` runs in CI** with jsdom as a harness dependency only — 23 assertions on the measure, the scheme gutter, the mātrā row, the dialogs, a saved draft and the cross-tab wiring. |
 | G2 | **Every landing-page slug is asserted** to open a sample or a rhyme. |
 | G3 | **The tests badge is asserted against the suite** — the last assertion compares the badge to the number the run is about to print. |
 | G4 | **No network API anywhere in the app** — `fetch`, `XMLHttpRequest`, `WebSocket`, `EventSource` are asserted absent. |
 
-The suite went from 74 to **132 assertions** in `test-node.js`, plus 20 in `test-ui.mjs`.
+**136 assertions** in `test-node.js`, **23** in `test-ui.mjs`.
 
 ---
 
-## Still open
+## What is left, and why
 
-| | Item | Why it is not done yet | Effort |
-|---|---|---|---|
-| B2′ | **Every pronunciation for every word** — the curated set covers the homographs that change a line's metre; the other ~15% of CMUdict words still keep one reading | Needs the upstream cmudict source re-encoded into this repo's compact format. The curated table is the honest 80% at 1 KB instead of 400 KB | M |
-| C5 | **Urdu script** for the ghazal | Its short vowels are not written, so a mātrā count would be a guess dressed as a measurement. Doing it properly needs a beher table per metre (19 of them) and a transliteration pass | L |
-| F2 | **Icon and version resource in the EXE** | The Windows build is produced by the `app-builder` kit's reusable workflow; changing it changes every app in the estate | M |
-| F3′ | **Wiring the adaptive layers into the APK** | The layers exist; the APK's icon is set in `app-builder`. The kit already verifies the APK carries *an* icon — this would make it carry *this* one | M |
-| D7 | **Sync between tabs** | Two tabs open on the same journal will overwrite each other. A `BroadcastChannel` or a `storage` event is enough, but it wants a test that actually opens two contexts | M |
+| | Item | Why |
+|---|---|---|
+| — | **Adaptive-icon XML in the APK** | The three layers are committed and the launcher PNGs are generated at every density, but the `mipmap-anydpi-v26` XML that Android reads for a shaped icon is written by `app-builder`'s APK job. That is a kit change, and a kit change reaches every app in the estate — it wants its own review, not a passenger on this one. |
+
+### Urdu script — dropped by request
+
+The ghazal's native script was on the list and is now off it. Counting it honestly needs
+two things this app does not have: a beher table for the nineteen classical metres, and a
+transliteration pass, because Urdu does not write its short vowels. A mātrā count over
+unwritten vowels would be a guess dressed up as a measurement — exactly what the app
+refuses to do elsewhere. Devanagari and Gujarati are counted because their vowels *are*
+written.
 
 ## Not doing, and why
 

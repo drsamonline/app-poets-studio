@@ -460,15 +460,44 @@
 
   function persistLocal() { if (window.Loom) Loom.storage.set("drafts", drafts); }
 
+  /* Two tabs on the same journal would otherwise overwrite each other: each holds
+     the whole array in memory and writes all of it. A save now tells the other
+     tab to reload, so the last write wins in both of them instead of one tab
+     silently reverting the other. BroadcastChannel where it exists, the storage
+     event everywhere else. */
+  var CHANNEL = "poets-studio:journal";
+  var chan = null;
+  try { if (window.BroadcastChannel) chan = new BroadcastChannel(CHANNEL); } catch (e) { chan = null; }
+
+  function announce() {
+    if (chan) { try { chan.postMessage({ at: Date.now() }); } catch (e) { /* a closed port is not an error here */ } }
+  }
+
   function persist() {
     if (window.Loom && Loom.storage.put && inIdb) {
       Loom.storage.put(DB, STORE, JKEY, drafts).then(function () {
         Loom.storage.remove("drafts");     // the mirror is not needed once the journal is safe
-      }).catch(function () { inIdb = false; persistLocal(); });
+        announce();
+      }).catch(function () { inIdb = false; persistLocal(); announce(); });
       return;
     }
     persistLocal();
+    announce();
   }
+
+  function reloadJournal() {
+    if (!window.Loom || !Loom.storage.getItem || !window.indexedDB) return;
+    Loom.storage.getItem(DB, STORE, JKEY).then(function (saved) {
+      if (!saved || !saved.length) return;
+      drafts = saved;
+      renderDrafts();
+    }).catch(function () { /* the other tab's write is not worth an error here */ });
+  }
+
+  if (chan) chan.onmessage = function () { reloadJournal(); };
+  window.addEventListener("storage", function (e) {
+    if (e && e.key && e.key.indexOf("drafts") >= 0) reloadJournal();
+  });
 
   function loadJournal() {
     if (!window.Loom || !Loom.storage.getItem || !window.indexedDB) return;
@@ -761,7 +790,7 @@
   window.addEventListener("hashchange", function () { applyDemo(fromHash()); });
 
   /* The landing page drives this frame from outside, so switching sample does
-     not reload 124,085 words. Same-origin is not assumed: any parent may send it. */
+     not reload 124,926 words. Same-origin is not assumed: any parent may send it. */
   window.addEventListener("message", function (e) {
     var d = e.data;
     if (d && d.type === "poets-studio:demo") applyDemo(String(d.slug || ""));

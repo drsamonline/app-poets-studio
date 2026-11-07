@@ -30,6 +30,37 @@ function eq(name, actual, expected) {
 function section(t) { console.log("\n" + t); }
 
 /* ------------------------------------------------------------------ */
+/* What a page LOADS and what a page merely LINKS TO are different things.
+ *
+ * The offline promise is about loads: a browser fetches src, srcset, poster,
+ * <link href>, a CSS url(), @import and importScripts by itself. An <a href>
+ * is fetched only if a reader clicks it - it is a door, not a request. The
+ * assertion here used to grep every https?:// in the file, so the day the
+ * support block (Ko-fi, PayPal, the bookstore) landed as anchors the app was
+ * reported as making network requests it does not make. Counting the two
+ * separately keeps the promise strict AND keeps the anchors visible. */
+function loadsFrom(text) {
+  var out = [], m, re;
+  re = /\b(?:src|srcset|poster)\s*=\s*["']([^"']+)["']/gi;
+  while ((m = re.exec(text))) out.push(m[1]);
+  re = /<link\b[^>]*\bhref\s*=\s*["']([^"']+)["'][^>]*>/gi;
+  while ((m = re.exec(text))) out.push(m[1]);
+  re = /url\(\s*["']?([^"')]+)["']?\s*\)/gi;
+  while ((m = re.exec(text))) out.push(m[1]);
+  re = /@import\s+(?:url\(\s*)?["']([^"']+)["']/gi;
+  while ((m = re.exec(text))) out.push(m[1]);
+  re = /importScripts\s*\(\s*["']([^"']+)["']/gi;
+  while ((m = re.exec(text))) out.push(m[1]);
+  return out.map(function (u) { return u.trim(); })
+    .filter(function (u) { return /^(?:https?:)?\/\//i.test(u); });
+}
+function linksTo(text) {
+  var out = [], m, re = /<a\b[^>]*\bhref\s*=\s*["']([^"']+)["']/gi;
+  while ((m = re.exec(text))) out.push(m[1].trim());
+  return out.filter(function (u) { return /^(?:https?:)?\/\//i.test(u); });
+}
+
+/* ------------------------------------------------------------------ */
 section("the dictionary");
 
 ok("loaded more than 120,000 words", DICT.size > 120000, "size " + DICT.size);
@@ -267,7 +298,14 @@ var html = fs.readFileSync(path.join(dir, "index.html"), "utf8");
 ["poetry.js", "dict.js", "samples.js", "web-kit.js", "export-kit.js"].forEach(function (f) {
   ok("the app loads " + f, html.indexOf('src="' + f + '"') >= 0);
 });
-ok("the app makes no network request", !/https?:\/\//.test(html.replace(/https?:\/\/[^"'\s]*w3\.org[^"'\s]*/g, "")));
+var external = loadsFrom(html).filter(function (u) {
+  return !/w3\.org|schema\.org/.test(u);
+});
+eq("the app loads nothing from the network", external, []);
+var anchors = linksTo(html);
+ok("the page's support block is anchors, not loads", anchors.length >= 3 && anchors.every(function (u) {
+  return loadsFrom(html).indexOf(u) < 0;
+}), anchors.join(" "));
 
 /* ------------------------------------------------------------------ */
 section("the words verse actually uses");
@@ -376,11 +414,14 @@ section("the badge tells the truth");
 
 /* This is the last assertion on purpose: it compares the badge to the number
    this run is about to print, so a green suite can never sit next to a stale
-   "74 passing" on the README and the landing page. */
+   "74 passing" on the README and the landing page. The badge may state a count,
+   or state none at all ("in CI" makes no claim, so it cannot go stale); what it
+   may NOT do is state a number that disagrees with this run. */
 var badge = fs.readFileSync(path.join(__dirname, "docs", "assets", "badge-tests.svg"), "utf8");
 var claim = (badge.match(/>([0-9,]+) passing</) || [])[1];
-eq("the tests badge claims the number this run prints", claim,
-  String(passed + 1).replace(/\B(?=(\d{3})+(?!\d))/g, ","));
+var total = String(passed + 1).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+ok("the tests badge states no count that disagrees with this run", claim === undefined || claim === total,
+  claim + " vs " + total);
 
 /* ------------------------------------------------------------------ */
 console.log("\n" + passed + " passed, " + failed + " failed");

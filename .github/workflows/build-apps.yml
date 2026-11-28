@@ -36,7 +36,7 @@ concurrency:
 
 jobs:
   app:
-    uses: drsamonline/app-builder/.github/workflows/build.yml@a1dfa124cbc55390598295a0c8be54dae33696c0   # adaptive_icon input
+    uses: drsamonline/app-builder/.github/workflows/build.yml@f181238a709f3b124dbf30e1f7c6835ccbe6321f   # adaptive_icon input
     with:
       app_name: app-poets-studio
       app_src: docs/play
